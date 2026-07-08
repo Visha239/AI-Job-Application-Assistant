@@ -1,72 +1,86 @@
 import json
-import re
 import streamlit as st
+
+from app.services.ats import analyze_ats
+from app.services.matcher import match_job
+from app.services.recruiter import generate_email
+from app.services.tracker import save_application, count_applications
+from app.services.career_coach import get_career_advice
+from app.services.resume_builder import generate_resume_summary, generate_project_bullets
 
 st.set_page_config(page_title="CareerPilot AI", layout="wide")
 
 with open("data/profile.json", "r") as file:
     profile = json.load(file)
 
-important_keywords = [
-    "SQL", "Python", "Excel", "Power BI", "Tableau", "Data Analysis",
-    "Business Analysis", "Requirements Gathering", "Documentation",
-    "Dashboard", "Reporting", "KPI", "DAX", "Power Query",
-    "ETL", "Data Visualization", "Stakeholder", "UML",
-    "Gap Analysis", "Jira", "ServiceNow", "Linux"
-]
-
 st.title("CareerPilot AI")
-st.subheader("AI Job Application Assistant")
+st.subheader("Free AI Job Application Assistant")
 
 menu = st.sidebar.selectbox(
     "Choose Feature",
     [
         "Dashboard",
-        "ATS Resume Tailor",
-        "Recruiter Email"
+        "ATS Resume Intelligence",
+        "Job Matcher",
+        "Recruiter Email",
+        "Application Tracker",
+        "Career Coach"
     ]
 )
 
 if menu == "Dashboard":
     st.header(f"Welcome, {profile['name']}")
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Applications Tracked", "0")
-    col2.metric("Strong Matches", "0")
-    col3.metric("Interviews", "0")
 
-elif menu == "ATS Resume Tailor":
-    st.header("ATS Resume Tailor")
+    applications_count = count_applications()
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Applications Tracked", applications_count)
+    col2.metric("Strong Matches", "Coming Soon")
+    col3.metric("Interviews", "Coming Soon")
+
+    st.info(get_career_advice(applications_count))
+
+elif menu == "ATS Resume Intelligence":
+    st.header("ATS Resume Intelligence")
 
     jd = st.text_area("Paste Job Description", height=300)
 
-    if st.button("Analyze ATS Match"):
-        found_keywords = []
-        missing_keywords = []
+    if st.button("Analyze ATS"):
+        result = analyze_ats(jd)
 
-        for keyword in important_keywords:
-            pattern = r"\b" + re.escape(keyword.lower()) + r"\b"
-            if re.search(pattern, jd.lower()):
-                found_keywords.append(keyword)
-            else:
-                missing_keywords.append(keyword)
-
-        ats_score = round((len(found_keywords) / len(important_keywords)) * 100, 2)
-
-        st.metric("ATS Keyword Score", f"{ats_score}%")
+        st.metric("ATS Keyword Score", f"{result['score']}%")
 
         st.subheader("Keywords Found")
-        st.write(found_keywords)
+        st.write(result["found_keywords"])
 
         st.subheader("Keywords You Can Add If Truthful")
-        st.write(missing_keywords[:8])
+        st.write(result["missing_keywords"][:10])
 
         st.subheader("Suggested Resume Summary")
-        st.write(
-            f"Data-focused professional with {profile['experience_years']} years of experience "
-            f"in SQL, Python, Excel, Power BI, Tableau, reporting, dashboards, and business analysis. "
-            f"Experienced in analyzing data, creating actionable insights, and supporting business decision-making "
-            f"through data visualization and structured reporting."
-        )
+        st.write(generate_resume_summary(profile))
+
+        st.subheader("Suggested Project Bullets")
+        for bullet in generate_project_bullets():
+            st.write("• " + bullet)
+
+elif menu == "Job Matcher":
+    st.header("Job Matcher")
+
+    role_type = st.selectbox("Select Role Type", ["Data Analyst", "Business Analyst", "Support Engineer"])
+    jd = st.text_area("Paste Job Description", height=300)
+
+    if st.button("Match Job"):
+        result = match_job(jd, role_type)
+
+        st.metric("Match Score", f"{result['score']}%")
+
+        st.subheader("Matched Skills")
+        st.write(result["matched"])
+
+        st.subheader("Missing Skills")
+        st.write(result["missing"])
+
+        st.success(result["recommendation"])
 
 elif menu == "Recruiter Email":
     st.header("Recruiter Email Generator")
@@ -75,20 +89,32 @@ elif menu == "Recruiter Email":
     role = st.text_input("Job Role")
 
     if st.button("Generate Email"):
-        email = f"""Subject: Application for {role} Role
+        email = generate_email(profile, company, role)
+        st.text_area("Email Draft", email, height=350)
 
-Dear Hiring Team,
+elif menu == "Application Tracker":
+    st.header("Application Tracker")
 
-I hope you are doing well.
+    company = st.text_input("Company")
+    role = st.text_input("Role")
+    location = st.text_input("Location")
+    job_link = st.text_input("Job Link")
+    status = st.selectbox("Status", ["Not Applied", "Applied", "Interview", "Rejected", "Offer"])
+    notes = st.text_area("Notes")
 
-My name is {profile['name']}. I am interested in the {role} role at {company}.
+    if st.button("Save Application"):
+        save_application(company, role, location, job_link, status, notes)
+        st.success("Application saved successfully.")
 
-I have experience in SQL, Python, Power BI, Excel, Tableau, and Data Analysis.
+elif menu == "Career Coach":
+    st.header("AI Career Coach")
 
-Please find my resume attached for your reference.
+    applications_count = count_applications()
 
-Best regards,
-{profile['name']}
-{profile['email']}
-"""
-        st.text_area("Email Draft", email, height=300)
+    st.metric("Total Applications", applications_count)
+    st.write(get_career_advice(applications_count))
+
+    st.subheader("Today’s Focus")
+    st.write("1. Apply to strong-match jobs.")
+    st.write("2. Tailor your resume before applying.")
+    st.write("3. Send recruiter messages for important companies.")
