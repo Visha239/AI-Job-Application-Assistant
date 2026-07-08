@@ -1,12 +1,14 @@
 import json
 import streamlit as st
+import pandas as pd
 
 from app.services.ats import analyze_ats
 from app.services.matcher import match_job
 from app.services.recruiter import generate_email
-from app.services.tracker import save_application, count_applications
+from app.services.tracker import save_application, get_all_applications, get_total_applications
 from app.services.career_coach import get_career_advice
 from app.services.resume_builder import generate_resume_summary, generate_project_bullets
+from app.services.resume_intelligence import analyze_resume_intelligence
 
 st.set_page_config(page_title="CareerPilot AI", layout="wide")
 
@@ -20,6 +22,7 @@ menu = st.sidebar.selectbox(
     "Choose Feature",
     [
         "Dashboard",
+        "Resume Intelligence v2",
         "ATS Resume Intelligence",
         "Job Matcher",
         "Recruiter Email",
@@ -31,14 +34,44 @@ menu = st.sidebar.selectbox(
 if menu == "Dashboard":
     st.header(f"Welcome, {profile['name']}")
 
-    applications_count = count_applications()
+    total_applications = get_total_applications()
 
     col1, col2, col3 = st.columns(3)
-    col1.metric("Applications Tracked", applications_count)
+    col1.metric("Applications Tracked", total_applications)
     col2.metric("Strong Matches", "Coming Soon")
     col3.metric("Interviews", "Coming Soon")
 
-    st.info(get_career_advice(applications_count))
+    st.info(get_career_advice(total_applications))
+
+elif menu == "Resume Intelligence v2":
+    st.header("Resume Intelligence v2")
+
+    role_type = st.selectbox(
+        "Select Target Role",
+        ["Data Analyst", "Business Analyst", "Support Engineer"]
+    )
+
+    jd = st.text_area("Paste Job Description", height=300)
+
+    if st.button("Analyze Resume Fit"):
+        result = analyze_resume_intelligence(jd, role_type)
+
+        col1, col2 = st.columns(2)
+        col1.metric("Current Resume Score", f"{result['current_score']}%")
+        col2.metric("Expected Score After Tailoring", f"{result['expected_score']}%")
+
+        st.subheader("Strengths")
+        st.write(result["matched_skills"])
+
+        st.subheader("Missing Skills / Keywords")
+        st.write(result["missing_skills"])
+
+        st.subheader("Recommended Projects to Highlight")
+        for project in result["recommended_projects"]:
+            st.write("• " + project)
+
+        st.subheader("Recommendation")
+        st.success(result["recommendation"])
 
 elif menu == "ATS Resume Intelligence":
     st.header("ATS Resume Intelligence")
@@ -95,24 +128,40 @@ elif menu == "Recruiter Email":
 elif menu == "Application Tracker":
     st.header("Application Tracker")
 
-    company = st.text_input("Company")
-    role = st.text_input("Role")
-    location = st.text_input("Location")
-    job_link = st.text_input("Job Link")
-    status = st.selectbox("Status", ["Not Applied", "Applied", "Interview", "Rejected", "Offer"])
-    notes = st.text_area("Notes")
+    with st.form("application_form"):
+        company = st.text_input("Company")
+        role = st.text_input("Role")
+        location = st.text_input("Location")
+        job_link = st.text_input("Job Link")
+        status = st.selectbox("Status", ["Not Applied", "Applied", "Interview", "Rejected", "Offer"])
+        notes = st.text_area("Notes")
 
-    if st.button("Save Application"):
-        save_application(company, role, location, job_link, status, notes)
-        st.success("Application saved successfully.")
+        submitted = st.form_submit_button("Save Application")
+
+        if submitted:
+            save_application(company, role, location, job_link, status, notes)
+            st.success("Application saved successfully.")
+
+    st.subheader("Saved Applications")
+
+    applications = get_all_applications()
+
+    if applications:
+        df = pd.DataFrame(
+            applications,
+            columns=["Company", "Role", "Location", "Job Link", "Status", "Notes", "Applied Date"]
+        )
+        st.dataframe(df, use_container_width=True)
+    else:
+        st.info("No applications saved yet.")
 
 elif menu == "Career Coach":
     st.header("AI Career Coach")
 
-    applications_count = count_applications()
+    total_applications = get_total_applications()
 
-    st.metric("Total Applications", applications_count)
-    st.write(get_career_advice(applications_count))
+    st.metric("Total Applications", total_applications)
+    st.write(get_career_advice(total_applications))
 
     st.subheader("Today’s Focus")
     st.write("1. Apply to strong-match jobs.")
