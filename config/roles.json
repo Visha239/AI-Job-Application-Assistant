@@ -1,0 +1,62 @@
+{
+  "Data Analyst": {
+    "core_skills": [
+      "SQL",
+      "Python",
+      "Excel",
+      "Power BI",
+      "Tableau",
+      "Data Analysis",
+      "Reporting",
+      "Dashboard",
+      "KPI",
+      "ETL",
+      "DAX",
+      "Power Query"
+    ],
+    "recommended_projects": [
+      "Power BI Manufacturing Dashboard",
+      "HR Attendance Dashboard",
+      "Loan Risk Analysis"
+    ],
+    "resume_version": "Data Analyst Resume"
+  },
+  "Business Analyst": {
+    "core_skills": [
+      "SQL",
+      "Excel",
+      "Business Analysis",
+      "Requirements Gathering",
+      "Documentation",
+      "Gap Analysis",
+      "Stakeholder",
+      "UML",
+      "Process Improvement",
+      "Project Management"
+    ],
+    "recommended_projects": [
+      "Power BI Manufacturing Dashboard",
+      "HR Attendance Dashboard",
+      "Process Analysis Project"
+    ],
+    "resume_version": "Business Analyst Resume"
+  },
+  "Support Engineer": {
+    "core_skills": [
+      "Linux",
+      "SQL",
+      "ServiceNow",
+      "Jira",
+      "Troubleshooting",
+      "Incident Management",
+      "Application Support",
+      "Production Support"
+    ],
+    "recommended_projects": [
+      "Enterprise Support Engineer Experience",
+      "Incident Management",
+      "Linux Troubleshooting"
+    ],
+    "resume_version": "Support Engineer Resume"
+  }
+}

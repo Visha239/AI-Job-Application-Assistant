@@ -7,8 +7,10 @@ from app.services.matcher import match_job
 from app.services.recruiter import generate_email
 from app.services.tracker import save_application, get_all_applications, get_total_applications
 from app.services.career_coach import get_career_advice
-from app.services.resume_builder import generate_resume_summary, generate_project_bullets
+from app.services.resume_builder import generate_resume
 from app.services.resume_intelligence import analyze_resume_intelligence
+from app.utils.config_loader import get_role_names
+from app.utils.pdf import generate_resume_pdf
 
 st.set_page_config(page_title="CareerPilot AI", layout="wide")
 
@@ -23,6 +25,7 @@ menu = st.sidebar.selectbox(
     [
         "Dashboard",
         "Resume Intelligence v2",
+        "Resume Builder",
         "ATS Resume Intelligence",
         "Job Matcher",
         "Recruiter Email",
@@ -33,7 +36,6 @@ menu = st.sidebar.selectbox(
 
 if menu == "Dashboard":
     st.header(f"Welcome, {profile['name']}")
-
     total_applications = get_total_applications()
 
     col1, col2, col3 = st.columns(3)
@@ -46,11 +48,7 @@ if menu == "Dashboard":
 elif menu == "Resume Intelligence v2":
     st.header("Resume Intelligence v2")
 
-    role_type = st.selectbox(
-        "Select Target Role",
-        ["Data Analyst", "Business Analyst", "Support Engineer"]
-    )
-
+    role_type = st.selectbox("Select Target Role", get_role_names())
     jd = st.text_area("Paste Job Description", height=300)
 
     if st.button("Analyze Resume Fit"):
@@ -66,12 +64,54 @@ elif menu == "Resume Intelligence v2":
         st.subheader("Missing Skills / Keywords")
         st.write(result["missing_skills"])
 
+        st.subheader("Recommended Resume Version")
+        st.success(result["resume_version"])
+
         st.subheader("Recommended Projects to Highlight")
         for project in result["recommended_projects"]:
             st.write("• " + project)
 
         st.subheader("Recommendation")
         st.success(result["recommendation"])
+
+elif menu == "Resume Builder":
+    st.header("Resume Builder")
+
+    role_type = st.selectbox("Select Resume Type", get_role_names())
+    jd = st.text_area("Paste Job Description for Tailoring", height=250)
+
+    if st.button("Generate Tailored Resume"):
+        intelligence = analyze_resume_intelligence(jd, role_type)
+        resume = generate_resume(profile, role_type, intelligence["missing_skills"])
+
+        st.subheader("Resume Preview")
+
+        st.markdown(f"## {resume['name']}")
+        st.write(resume["email"])
+
+        st.markdown("### Professional Summary")
+        st.write(resume["summary"])
+
+        st.markdown("### Skills")
+        st.write(", ".join(resume["skills"]))
+
+        st.markdown("### Projects")
+        for project in resume["projects"]:
+            st.write("• " + project)
+
+        st.markdown("### Experience")
+        for exp in resume["experience"]:
+            st.write("• " + exp)
+
+        pdf_path = generate_resume_pdf(resume)
+
+        with open(pdf_path, "rb") as pdf_file:
+            st.download_button(
+                label="📄 Download ATS Resume PDF",
+                data=pdf_file,
+                file_name=pdf_path.split("\\")[-1],
+                mime="application/pdf"
+            )
 
 elif menu == "ATS Resume Intelligence":
     st.header("ATS Resume Intelligence")
@@ -89,17 +129,10 @@ elif menu == "ATS Resume Intelligence":
         st.subheader("Keywords You Can Add If Truthful")
         st.write(result["missing_keywords"][:10])
 
-        st.subheader("Suggested Resume Summary")
-        st.write(generate_resume_summary(profile))
-
-        st.subheader("Suggested Project Bullets")
-        for bullet in generate_project_bullets():
-            st.write("• " + bullet)
-
 elif menu == "Job Matcher":
     st.header("Job Matcher")
 
-    role_type = st.selectbox("Select Role Type", ["Data Analyst", "Business Analyst", "Support Engineer"])
+    role_type = st.selectbox("Select Role Type", get_role_names())
     jd = st.text_area("Paste Job Description", height=300)
 
     if st.button("Match Job"):
@@ -149,7 +182,7 @@ elif menu == "Application Tracker":
     if applications:
         df = pd.DataFrame(
             applications,
-            columns=["Company", "Role", "Location", "Job Link", "Status", "Notes", "Applied Date"]
+            columns=["ID", "Company", "Role", "Location", "Job Link", "Status", "Notes", "Applied Date"]
         )
         st.dataframe(df, use_container_width=True)
     else:

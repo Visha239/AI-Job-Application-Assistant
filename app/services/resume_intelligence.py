@@ -1,40 +1,22 @@
-CORE_SKILLS = {
-    "Data Analyst": [
-        "SQL", "Python", "Excel", "Power BI", "Tableau",
-        "Data Analysis", "Reporting", "Dashboard", "KPI", "ETL"
-    ],
-    "Business Analyst": [
-        "SQL", "Excel", "Business Analysis", "Requirements Gathering",
-        "Documentation", "Gap Analysis", "Stakeholder", "UML",
-        "Process Improvement", "Project Management"
-    ],
-    "Support Engineer": [
-        "Linux", "SQL", "ServiceNow", "Jira", "Troubleshooting",
-        "Incident Management", "Application Support", "Production Support"
-    ]
-}
+from app.utils.config_loader import get_role_config
 
-PROJECT_RECOMMENDATIONS = {
-    "Data Analyst": [
-        "Power BI Manufacturing Dashboard",
-        "HR Attendance Dashboard",
-        "Loan Risk Analysis"
-    ],
-    "Business Analyst": [
-        "Power BI Manufacturing Dashboard",
-        "HR Attendance Dashboard",
-        "Process Analysis Project"
-    ],
-    "Support Engineer": [
-        "Enterprise Support Engineer Experience",
-        "Incident Management",
-        "Linux Troubleshooting"
-    ]
-}
 
 def analyze_resume_intelligence(job_description, role_type):
+    role_config = get_role_config(role_type)
+
+    if not role_config:
+        return {
+            "current_score": 0,
+            "expected_score": 0,
+            "matched_skills": [],
+            "missing_skills": [],
+            "recommended_projects": [],
+            "resume_version": "Default Resume",
+            "recommendation": "Invalid role selected."
+        }
+
     jd = job_description.lower()
-    skills = CORE_SKILLS.get(role_type, CORE_SKILLS["Data Analyst"])
+    skills = role_config["core_skills"]
 
     matched = []
     missing = []
@@ -46,7 +28,6 @@ def analyze_resume_intelligence(job_description, role_type):
             missing.append(skill)
 
     current_score = round((len(matched) / len(skills)) * 100, 2)
-
     expected_score = min(current_score + (len(missing[:4]) * 5), 95)
 
     if current_score >= 80:
@@ -61,6 +42,7 @@ def analyze_resume_intelligence(job_description, role_type):
         "expected_score": expected_score,
         "matched_skills": matched,
         "missing_skills": missing,
-        "recommended_projects": PROJECT_RECOMMENDATIONS.get(role_type, []),
+        "recommended_projects": role_config["recommended_projects"],
+        "resume_version": role_config["resume_version"],
         "recommendation": recommendation
     }

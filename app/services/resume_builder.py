@@ -1,14 +1,37 @@
-def generate_resume_summary(profile):
-    return (
+def generate_resume(profile, role_type, missing_keywords=None):
+    if missing_keywords is None:
+        missing_keywords = []
+
+    summary = (
         f"Data-focused professional with {profile['experience_years']} years of experience "
-        "in SQL, Python, Excel, Power BI, Tableau, reporting, dashboards, and business analysis. "
-        "Experienced in analyzing data, creating actionable insights, and supporting business decision-making."
+        "in SQL, Python, Excel, Power BI, Tableau, dashboards, reporting, and business analysis. "
+        "Experienced in analyzing data, creating insights, and supporting business decision-making."
     )
 
-def generate_project_bullets():
-    return [
-        "Built interactive Power BI dashboards to track KPIs, trends, and operational performance.",
-        "Used SQL and Excel to clean, analyze, and summarize business data for reporting.",
-        "Created visual reports to support business teams in decision-making.",
-        "Applied data analysis techniques to identify patterns, gaps, and improvement opportunities."
-    ]
+    if role_type == "Business Analyst":
+        summary = (
+            f"Business-focused analyst with {profile['experience_years']} years of experience "
+            "in SQL, Excel, documentation, stakeholder communication, requirement understanding, "
+            "gap analysis, reporting, and process improvement."
+        )
+
+    if role_type == "Support Engineer":
+        summary = (
+            f"Technical support professional with {profile['experience_years']} years of experience "
+            "in Linux, SQL, ServiceNow, Jira, incident management, troubleshooting, and production support."
+        )
+
+    resume = {
+        "name": profile["name"],
+        "email": profile["email"],
+        "role_type": role_type,
+        "summary": summary,
+        "skills": profile["skills"] + missing_keywords[:5],
+        "projects": profile["projects"],
+        "experience": [
+            "Enterprise Support Engineer at Evertz India Pvt Ltd",
+            "Worked on SQL queries, Linux troubleshooting, ServiceNow tickets, Jira reports, and production issue resolution."
+        ]
+    }
+
+    return resume
