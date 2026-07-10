@@ -8,6 +8,7 @@ from app.services.recruiter import generate_email
 from app.services.tracker import save_application, get_all_applications, get_total_applications
 from app.services.career_coach import get_career_advice
 from app.services.resume_builder import generate_resume
+from app.services.resume_optimizer import ResumeOptimizer
 from app.services.resume_intelligence import analyze_resume_intelligence
 from app.utils.config_loader import get_role_names
 from app.utils.pdf import generate_resume_pdf
@@ -75,42 +76,33 @@ elif menu == "Resume Intelligence v2":
         st.success(result["recommendation"])
 
 elif menu == "Resume Builder":
-    st.header("Resume Builder")
+    st.header("Resume Builder / Optimizer")
 
     role_type = st.selectbox("Select Resume Type", get_role_names())
     jd = st.text_area("Paste Job Description for Tailoring", height=250)
 
-    if st.button("Generate Tailored Resume"):
-        intelligence = analyze_resume_intelligence(jd, role_type)
-        resume = generate_resume(profile, role_type, intelligence["missing_skills"])
+    if st.button("Generate Optimized Resume"):
+        optimizer = ResumeOptimizer()
 
-        st.subheader("Resume Preview")
+        result = optimizer.optimize_resume(
+            role_type=role_type,
+            job_description=jd
+        )
 
-        st.markdown(f"## {resume['name']}")
-        st.write(resume["email"])
+        st.success("Optimized resume created successfully.")
 
-        st.markdown("### Professional Summary")
-        st.write(resume["summary"])
+        st.subheader("Keywords Found in JD")
+        st.write(result["keywords"])
 
-        st.markdown("### Skills")
-        st.write(", ".join(resume["skills"]))
+        st.subheader("Updated Career Objective")
+        st.write(result["objective"])
 
-        st.markdown("### Projects")
-        for project in resume["projects"]:
-            st.write("• " + project)
-
-        st.markdown("### Experience")
-        for exp in resume["experience"]:
-            st.write("• " + exp)
-
-        pdf_path = generate_resume_pdf(resume)
-
-        with open(pdf_path, "rb") as pdf_file:
+        with open(result["output_path"], "rb") as file:
             st.download_button(
-                label="📄 Download ATS Resume PDF",
-                data=pdf_file,
-                file_name=pdf_path.split("\\")[-1],
-                mime="application/pdf"
+                label="Download Optimized Resume DOCX",
+                data=file,
+                file_name=result["output_path"].split("\\")[-1],
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             )
 
 elif menu == "ATS Resume Intelligence":
