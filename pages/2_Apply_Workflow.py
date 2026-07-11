@@ -5,8 +5,13 @@ from pathlib import Path
 
 import streamlit as st
 
+from app.services.application_context import (
+    clear_selected_job,
+    get_selected_job,
+)
 from app.services.cover_letter import generate_cover_note
 from app.services.recruiter import generate_email
+from app.services.resume_history import save_resume_version
 from app.services.resume_optimizer import ResumeOptimizer
 from app.services.resume_report import ResumeReport
 from app.services.tracker import save_application
@@ -21,6 +26,22 @@ def load_profile() -> dict:
         return json.load(file)
 
 
+def map_resume_type(recommended_resume: str) -> str:
+    role_names = get_role_names()
+    recommended = recommended_resume.lower()
+
+    if "support" in recommended:
+        target = "Support Engineer"
+
+    elif "business" in recommended:
+        target = "Business Analyst"
+
+    else:
+        target = "Data Analyst"
+
+    return target if target in role_names else role_names[0]
+
+
 st.set_page_config(
     page_title="CareerPilot Apply Workflow",
     page_icon="🚀",
@@ -28,12 +49,33 @@ st.set_page_config(
 )
 
 profile = load_profile()
+selected_job = get_selected_job(st.session_state)
+
+default_company = selected_job.get("company", "")
+default_role = selected_job.get("job_role", "")
+default_location = selected_job.get(
+    "location",
+    "Bengaluru, Karnataka",
+)
+default_link = selected_job.get("job_link", "")
+default_jd = selected_job.get("job_description", "")
+default_resume_type = map_resume_type(
+    selected_job.get(
+        "resume_version",
+        "Data Analyst Resume",
+    )
+)
 
 st.title("🚀 Job Application Workflow")
 st.caption(
-    "Analyze a job, generate your same-format optimized resume, "
+    "Analyze the role, optimize your same-format resume, "
     "prepare outreach and track the application."
 )
+
+if selected_job:
+    st.success(
+        f"Loaded: {default_role} at {default_company}"
+    )
 
 with st.form("job_application_workflow"):
     left, right = st.columns(2)
@@ -41,28 +83,37 @@ with st.form("job_application_workflow"):
     with left:
         company = st.text_input(
             "Company",
-            placeholder="Example: EY",
+            value=default_company,
         )
 
         job_role = st.text_input(
             "Job Role",
-            placeholder="Example: Data Analyst",
+            value=default_role,
+        )
+
+        role_names = get_role_names()
+
+        default_index = (
+            role_names.index(default_resume_type)
+            if default_resume_type in role_names
+            else 0
         )
 
         resume_type = st.selectbox(
             "Resume Version",
-            options=get_role_names(),
+            options=role_names,
+            index=default_index,
         )
 
     with right:
         location = st.text_input(
             "Location",
-            value="Bengaluru, Karnataka",
+            value=default_location,
         )
 
         job_link = st.text_input(
             "Job Link",
-            placeholder="https://...",
+            value=default_link,
         )
 
         status = st.selectbox(
@@ -70,6 +121,7 @@ with st.form("job_application_workflow"):
             options=[
                 "Ready to Apply",
                 "Applied",
+                "Recruiter Contacted",
                 "Interview",
                 "Rejected",
                 "Offer",
@@ -77,9 +129,9 @@ with st.form("job_application_workflow"):
         )
 
     job_description = st.text_area(
-        "Paste Complete Job Description",
+        "Complete Job Description",
+        value=default_jd,
         height=320,
-        placeholder="Paste the complete role description here...",
     )
 
     generate_button = st.form_submit_button(
@@ -99,19 +151,18 @@ if generate_button:
         errors.append("Enter the job role.")
 
     if not job_description.strip():
-        errors.append("Paste the job description.")
+        errors.append("The selected job has no description. Paste it here.")
 
     if errors:
         for error in errors:
             st.error(error)
+
     else:
-        with st.spinner("Preparing your application package..."):
+        with st.spinner("Preparing application package..."):
             try:
                 report = ResumeReport().generate(job_description)
 
-                optimizer = ResumeOptimizer()
-
-                optimized = optimizer.optimize_resume(
+                optimized = ResumeOptimizer().optimize_resume(
                     role_type=resume_type,
                     job_description=job_description,
                 )
@@ -129,6 +180,21 @@ if generate_button:
                     role=job_role.strip(),
                 )
 
+                output_path = Path(optimized["output_path"])
+
+                resume_name = (
+                    f"{company.strip()} - "
+                    f"{job_role.strip()} - "
+                    f"{resume_type}"
+                )
+
+                save_resume_version(
+                    resume_name=resume_name,
+                    role_type=resume_type,
+                    file_path=str(output_path),
+                    ats_score=report["ats_score"],
+                )
+
                 st.session_state["application_package"] = {
                     "company": company.strip(),
                     "job_role": job_role.strip(),
@@ -144,7 +210,9 @@ if generate_button:
                 }
 
             except Exception as exc:
-                st.error(f"Could not prepare the application: {exc}")
+                st.error(
+                    f"Could not prepare the application: {exc}"
+                )
 
 
 package = st.session_state.get("application_package")
@@ -158,7 +226,7 @@ if package:
     metric1, metric2, metric3 = st.columns(3)
 
     metric1.metric(
-        "ATS Match Score",
+        "ATS Match",
         f"{report['ats_score']}%",
     )
 
@@ -187,19 +255,13 @@ if package:
         with col1:
             st.subheader("Matched Skills")
 
-            if report["matched"]:
-                for skill in report["matched"]:
-                    st.write(f"✅ {skill}")
-            else:
-                st.info("No target skills detected.")
+            for skill in report["matched"]:
+                st.write(f"✅ {skill}")
 
             st.subheader("Skills to Emphasize")
 
-            if report["emphasize"]:
-                for skill in report["emphasize"]:
-                    st.write(f"➕ {skill}")
-            else:
-                st.info("No additional emphasis suggested.")
+            for skill in report["emphasize"]:
+                st.write(f"➕ {skill}")
 
         with col2:
             st.subheader("Missing Skills")
@@ -225,11 +287,9 @@ if package:
         output_path = Path(optimized["output_path"])
 
         if output_path.exists():
-            resume_bytes = output_path.read_bytes()
-
             st.download_button(
                 label="Download Optimized Resume DOCX",
-                data=resume_bytes,
+                data=output_path.read_bytes(),
                 file_name=output_path.name,
                 mime=(
                     "application/vnd.openxmlformats-officedocument."
@@ -237,8 +297,6 @@ if package:
                 ),
                 width="stretch",
             )
-        else:
-            st.error("The generated resume file could not be found.")
 
     with tab3:
         st.text_area(
@@ -263,9 +321,11 @@ if package:
     ):
         notes = (
             f"ATS score: {report['ats_score']}%. "
-            f"Resume version: {package['resume_type']}. "
-            f"Matched skills: {', '.join(report['matched']) or 'None'}. "
-            f"Missing skills: {', '.join(report['missing']) or 'None'}."
+            f"Resume: {package['resume_type']}. "
+            f"Matched: "
+            f"{', '.join(report['matched']) or 'None'}. "
+            f"Missing: "
+            f"{', '.join(report['missing']) or 'None'}."
         )
 
         save_application(
@@ -277,4 +337,6 @@ if package:
             notes=notes,
         )
 
-        st.success("Application saved to the CareerPilot tracker.")
+        clear_selected_job(st.session_state)
+
+        st.success("Application saved to CareerPilot.")

@@ -3,6 +3,7 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
+from app.services.application_context import save_selected_job
 from app.services.job_ranker import rank_jobs
 from app.services.job_repository import (
     get_saved_job_count,
@@ -21,7 +22,7 @@ st.set_page_config(
 st.title("🔍 Job Discovery & Ranking")
 st.caption(
     "Search current openings, rank them against your profile, "
-    "and save the strongest opportunities."
+    "and prepare applications for the strongest opportunities."
 )
 
 with st.sidebar:
@@ -30,7 +31,6 @@ with st.sidebar:
     search_term = st.text_input(
         "Role",
         value="Data Analyst",
-        placeholder="Data Analyst",
     )
 
     location = st.text_input(
@@ -66,7 +66,7 @@ with st.sidebar:
     search_button = st.button(
         "Search Jobs",
         type="primary",
-        use_container_width=True,
+        width="stretch",
     )
 
 
@@ -77,8 +77,10 @@ if "ranked_jobs" not in st.session_state:
 if search_button:
     if not search_term.strip():
         st.error("Enter a role to search.")
+
     elif not selected_sites:
         st.error("Select at least one job source.")
+
     else:
         with st.spinner("Searching and ranking jobs..."):
             try:
@@ -90,8 +92,7 @@ if search_button:
                     sites=selected_sites,
                 )
 
-                ranked_jobs = rank_jobs(raw_jobs)
-                st.session_state.ranked_jobs = ranked_jobs
+                st.session_state.ranked_jobs = rank_jobs(raw_jobs)
 
             except Exception as exc:
                 st.session_state.ranked_jobs = pd.DataFrame()
@@ -99,15 +100,11 @@ if search_button:
 
 
 ranked_jobs = st.session_state.ranked_jobs
-
 saved_count = get_saved_job_count()
 
 metric1, metric2, metric3 = st.columns(3)
 
-metric1.metric(
-    "Jobs Found",
-    len(ranked_jobs),
-)
+metric1.metric("Jobs Found", len(ranked_jobs))
 
 strong_matches = (
     int((ranked_jobs["match_score"] >= 70).sum())
@@ -115,21 +112,15 @@ strong_matches = (
     else 0
 )
 
-metric2.metric(
-    "Strong Matches",
-    strong_matches,
-)
-
-metric3.metric(
-    "Saved Jobs",
-    saved_count,
-)
+metric2.metric("Strong Matches", strong_matches)
+metric3.metric("Saved Jobs", saved_count)
 
 
 if ranked_jobs.empty:
     st.info(
         "Use the search settings on the left and click **Search Jobs**."
     )
+
 else:
     st.subheader("Ranked Opportunities")
 
@@ -150,7 +141,7 @@ else:
 
     st.dataframe(
         ranked_jobs[available_columns],
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
     )
 
@@ -160,6 +151,7 @@ else:
         title = str(row.get("title") or "Unknown Role")
         company = str(row.get("company") or "Unknown Company")
         score = int(row.get("match_score") or 0)
+        job_url = str(row.get("job_url") or "")
 
         with st.expander(
             f"{score}% — {title} at {company}"
@@ -168,26 +160,36 @@ else:
 
             with left:
                 st.write(
-                    f"**Location:** {row.get('location') or 'Not provided'}"
+                    f"**Location:** "
+                    f"{row.get('location') or 'Not provided'}"
                 )
+
                 st.write(
-                    f"**Source:** {row.get('site') or 'Not provided'}"
+                    f"**Source:** "
+                    f"{row.get('site') or 'Not provided'}"
                 )
+
                 st.write(
-                    f"**Recommended resume:** "
+                    "**Recommended resume:** "
                     f"{row.get('resume_version') or 'Data Analyst Resume'}"
                 )
 
-                matched = row.get("matched_skills") or "None detected"
+                matched = (
+                    row.get("matched_skills")
+                    or "None detected"
+                )
+
                 missing = (
                     row.get("missing_profile_skills")
                     or "None detected"
                 )
 
                 st.write(f"**Matched skills:** {matched}")
-                st.write(f"**Profile skills not seen in JD:** {missing}")
+                st.write(f"**Skills not seen in JD:** {missing}")
 
-                description = str(row.get("description") or "").strip()
+                description = str(
+                    row.get("description") or ""
+                ).strip()
 
                 if description:
                     preview = (
@@ -200,26 +202,37 @@ else:
                     st.write(preview)
 
             with right:
-                job_url = str(row.get("job_url") or "")
-
                 if job_url:
                     st.link_button(
                         "Open Job",
                         job_url,
-                        use_container_width=True,
+                        width="stretch",
                     )
 
                 if st.button(
                     "Save Job",
-                    key=f"save_job_{index}_{job_url}",
-                    use_container_width=True,
+                    key=f"save_{index}_{job_url}",
+                    width="stretch",
                 ):
                     saved = save_job(row.to_dict())
 
                     if saved:
-                        st.success("Job saved to CareerPilot.")
+                        st.success("Job saved.")
                     else:
-                        st.warning("This job is already saved.")
+                        st.warning("Job already saved.")
+
+                if st.button(
+                    "Prepare Application",
+                    key=f"apply_{index}_{job_url}",
+                    type="primary",
+                    width="stretch",
+                ):
+                    save_selected_job(
+                        st.session_state,
+                        row.to_dict(),
+                    )
+
+                    st.switch_page("pages/2_Apply_Workflow.py")
 
 
 st.divider()
@@ -249,7 +262,7 @@ if saved_jobs:
 
     st.dataframe(
         saved_df[available_saved_columns],
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
     )
 else:
