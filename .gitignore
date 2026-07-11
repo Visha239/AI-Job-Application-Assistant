@@ -18,3 +18,7 @@ exports/reports/*
 
 .DS_Store
 Thumbs.db
+
+.env
+*.log
+exports/reports/*
