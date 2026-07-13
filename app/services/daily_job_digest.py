@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import html
 import json
@@ -25,7 +25,7 @@ def load_job_search_config(
             f"Job search configuration not found: {config_path}"
         )
 
-    with config_path.open("r", encoding="utf-8") as file:
+    with config_path.open("r", encoding="utf-8-sig") as file:
         config = json.load(file)
 
     required_fields = [
@@ -384,7 +384,7 @@ def export_digest_files(
 
     html_path.write_text(
         html_content,
-        encoding="utf-8",
+        encoding="utf-8-sig",
     )
 
     if ranked_jobs is None:

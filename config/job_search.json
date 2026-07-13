@@ -3,21 +3,20 @@
     "Data Analyst",
     "Power BI Analyst",
     "SQL Analyst",
-    "MIS Analyst",
     "Business Analyst",
+    "MIS Analyst",
+    "Reporting Analyst",
     "Application Support Analyst",
-    "Production Support Analyst",
-    "L1 Support Analyst",
-    "L2 Support Analyst"
+    "Production Support Analyst"
   ],
   "location": "Bengaluru, Karnataka",
   "sites": [
     "indeed",
-    "linkedin",
-    "google"
+    "linkedin"
   ],
-  "results_per_role": 10,
+  "results_per_role": 8,
   "hours_old": 72,
-  "minimum_match_score": 55,
-  "maximum_digest_jobs": 25
+  "minimum_match_score": 45,
+  "maximum_digest_jobs": 20,
+  "prefer_jobs_posted_within_hours": 72
 }
