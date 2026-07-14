@@ -22,3 +22,5 @@ Thumbs.db
 .env
 *.log
 exports/reports/*
+
+data/current_job_context.json
