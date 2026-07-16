@@ -1,194 +1,361 @@
+from __future__ import annotations
+
 import json
-import streamlit as st
+from pathlib import Path
+
 import pandas as pd
+import streamlit as st
 
-from app.services.ats import analyze_ats
-from app.services.matcher import match_job
-from app.services.recruiter import generate_email
-from app.services.tracker import save_application, get_all_applications, get_total_applications
-from app.services.career_coach import get_career_advice
-from app.services.resume_builder import generate_resume
-from app.services.resume_optimizer import ResumeOptimizer
-from app.services.resume_intelligence import analyze_resume_intelligence
-from app.utils.config_loader import get_role_names
-from app.utils.pdf import generate_resume_pdf
-
-st.set_page_config(page_title="CareerPilot AI", layout="wide")
-
-with open("data/profile.json", "r") as file:
-    profile = json.load(file)
-
-st.title("CareerPilot AI")
-st.subheader("Free AI Job Application Assistant")
-
-menu = st.sidebar.selectbox(
-    "Choose Feature",
-    [
-        "Dashboard",
-        "Resume Intelligence v2",
-        "Resume Builder",
-        "ATS Resume Intelligence",
-        "Job Matcher",
-        "Recruiter Email",
-        "Application Tracker",
-        "Career Coach"
-    ]
+from app.services.application_crm import (
+    load_crm,
+)
+from app.services.application_queue import (
+    load_queue,
+)
+from app.services.career_dashboard import (
+    build_dashboard_snapshot,
+)
+from app.services.job_repository import (
+    get_saved_jobs,
+)
+from app.services.outreach_manager import (
+    load_records,
+)
+from app.services.resume_history import (
+    get_resume_history,
 )
 
-if menu == "Dashboard":
-    st.header(f"Welcome, {profile['name']}")
-    total_applications = get_total_applications()
 
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Applications Tracked", total_applications)
-    col2.metric("Strong Matches", "Coming Soon")
-    col3.metric("Interviews", "Coming Soon")
+PROFILE_PATH = Path("data/profile.json")
 
-    st.info(get_career_advice(total_applications))
 
-elif menu == "Resume Intelligence v2":
-    st.header("Resume Intelligence v2")
+def load_profile() -> dict:
+    try:
+        with PROFILE_PATH.open(
+            "r",
+            encoding="utf-8-sig",
+        ) as file:
+            return json.load(file)
+    except (
+        OSError,
+        json.JSONDecodeError,
+    ):
+        return {
+            "name": "Vishal Banakar",
+        }
 
-    role_type = st.selectbox("Select Target Role", get_role_names())
-    jd = st.text_area("Paste Job Description", height=300)
 
-    if st.button("Analyze Resume Fit"):
-        result = analyze_resume_intelligence(jd, role_type)
+def safe_saved_jobs() -> list[dict]:
+    try:
+        return get_saved_jobs()
+    except Exception:
+        return []
 
-        col1, col2 = st.columns(2)
-        col1.metric("Current Resume Score", f"{result['current_score']}%")
-        col2.metric("Expected Score After Tailoring", f"{result['expected_score']}%")
 
-        st.subheader("Strengths")
-        st.write(result["matched_skills"])
+def safe_resume_count() -> int:
+    try:
+        history = get_resume_history()
+        return len(history)
+    except Exception:
+        return 0
 
-        st.subheader("Missing Skills / Keywords")
-        st.write(result["missing_skills"])
 
-        st.subheader("Recommended Resume Version")
-        st.success(result["resume_version"])
+st.set_page_config(
+    page_title="CareerPilot AI",
+    page_icon="🚀",
+    layout="wide",
+)
 
-        st.subheader("Recommended Projects to Highlight")
-        for project in result["recommended_projects"]:
-            st.write("• " + project)
+profile = load_profile()
 
-        st.subheader("Recommendation")
-        st.success(result["recommendation"])
+snapshot = build_dashboard_snapshot(
+    crm_records=load_crm(),
+    queue=load_queue(),
+    outreach_records=load_records(),
+    saved_jobs=safe_saved_jobs(),
+    generated_resumes=safe_resume_count(),
+)
 
-elif menu == "Resume Builder":
-    st.header("Resume Builder / Optimizer")
+metrics = snapshot["metrics"]
 
-    role_type = st.selectbox("Select Resume Type", get_role_names())
-    jd = st.text_area("Paste Job Description for Tailoring", height=250)
+st.title("🚀 CareerPilot AI")
+st.caption(
+    f"Welcome, {profile.get('name', 'Vishal')}. "
+    "Your complete job-search command center."
+)
 
-    if st.button("Generate Optimized Resume"):
-        optimizer = ResumeOptimizer()
+primary = st.columns(4)
 
-        result = optimizer.optimize_resume(
-            role_type=role_type,
-            job_description=jd
+primary[0].metric(
+    "Saved Jobs",
+    metrics["saved_jobs"],
+)
+primary[1].metric(
+    "Ready to Apply",
+    metrics["queue_ready"],
+)
+primary[2].metric(
+    "Applications Sent",
+    metrics["applications_sent"],
+)
+primary[3].metric(
+    "Applied Today",
+    metrics["applied_today"],
+)
+
+secondary = st.columns(4)
+
+secondary[0].metric(
+    "Interviews",
+    metrics["interviews"],
+)
+secondary[1].metric(
+    "Offers",
+    metrics["offers"],
+)
+secondary[2].metric(
+    "Response Rate",
+    f"{metrics['response_rate']}%",
+)
+secondary[3].metric(
+    "Recruiters Contacted",
+    metrics["recruiters_contacted"],
+)
+
+st.divider()
+
+action1, action2, action3, action4 = st.columns(4)
+
+with action1:
+    if st.button(
+        "Search Fresh Jobs",
+        type="primary",
+        width="stretch",
+    ):
+        st.switch_page(
+            "pages/1_Job_Search.py"
         )
 
-        st.success("Optimized resume created successfully.")
+with action2:
+    if st.button(
+        "Open Application Queue",
+        width="stretch",
+    ):
+        st.switch_page(
+            "pages/10_Auto_Apply_Assistant.py"
+        )
 
-        st.subheader("Keywords Found in JD")
-        st.write(result["keywords"])
+with action3:
+    if st.button(
+        "Open Application CRM",
+        width="stretch",
+    ):
+        st.switch_page(
+            "pages/11_Application_CRM.py"
+        )
 
-        st.subheader("Updated Career Objective")
-        st.write(result["objective"])
+with action4:
+    if st.button(
+        "Recruiter Outreach",
+        width="stretch",
+    ):
+        st.switch_page(
+            "pages/9_Recruiter_Outreach.py"
+        )
 
-        with open(result["output_path"], "rb") as file:
-            st.download_button(
-                label="Download Optimized Resume DOCX",
-                data=file,
-                file_name=result["output_path"].split("\\")[-1],
-                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+left, right = st.columns(
+    [3, 2]
+)
+
+with left:
+    st.subheader(
+        "Application Pipeline"
+    )
+
+    pipeline_df = pd.DataFrame(
+        snapshot["pipeline"]
+    )
+
+    if pipeline_df["count"].sum() == 0:
+        st.info(
+            "Add applications to the CRM to build your pipeline."
+        )
+    else:
+        st.bar_chart(
+            pipeline_df.set_index(
+                "stage"
+            )["count"],
+            height=320,
+        )
+
+with right:
+    st.subheader(
+        "Upcoming Follow-ups"
+    )
+
+    followups = snapshot[
+        "followups"
+    ]
+
+    if not followups:
+        st.success(
+            "No follow-ups are currently scheduled."
+        )
+    else:
+        for item in followups[:6]:
+            days = item[
+                "days_until"
+            ]
+
+            if days < 0:
+                timing = (
+                    f"{abs(days)} day(s) overdue"
+                )
+            elif days == 0:
+                timing = "Due today"
+            else:
+                timing = (
+                    f"Due in {days} day(s)"
+                )
+
+            st.write(
+                f"**{item['company']} — "
+                f"{item['role']}**"
+            )
+            st.caption(
+                f"{item['type']} · "
+                f"{item['date']} · "
+                f"{timing}"
             )
 
-elif menu == "ATS Resume Intelligence":
-    st.header("ATS Resume Intelligence")
+st.divider()
 
-    jd = st.text_area("Paste Job Description", height=300)
+trend_col, source_col = st.columns(2)
 
-    if st.button("Analyze ATS"):
-        result = analyze_ats(jd)
+with trend_col:
+    st.subheader(
+        "Weekly Application Progress"
+    )
 
-        st.metric("ATS Keyword Score", f"{result['score']}%")
+    weekly_df = pd.DataFrame(
+        snapshot["weekly_trend"]
+    )
 
-        st.subheader("Keywords Found")
-        st.write(result["found_keywords"])
+    st.bar_chart(
+        weekly_df.set_index(
+            "week"
+        )["applications"],
+        height=280,
+    )
 
-        st.subheader("Keywords You Can Add If Truthful")
-        st.write(result["missing_keywords"][:10])
+with source_col:
+    st.subheader(
+        "Job Source Performance"
+    )
 
-elif menu == "Job Matcher":
-    st.header("Job Matcher")
+    source_df = pd.DataFrame(
+        snapshot[
+            "source_performance"
+        ]
+    )
 
-    role_type = st.selectbox("Select Role Type", get_role_names())
-    jd = st.text_area("Paste Job Description", height=300)
-
-    if st.button("Match Job"):
-        result = match_job(jd, role_type)
-
-        st.metric("Match Score", f"{result['score']}%")
-
-        st.subheader("Matched Skills")
-        st.write(result["matched"])
-
-        st.subheader("Missing Skills")
-        st.write(result["missing"])
-
-        st.success(result["recommendation"])
-
-elif menu == "Recruiter Email":
-    st.header("Recruiter Email Generator")
-
-    company = st.text_input("Company Name")
-    role = st.text_input("Job Role")
-
-    if st.button("Generate Email"):
-        email = generate_email(profile, company, role)
-        st.text_area("Email Draft", email, height=350)
-
-elif menu == "Application Tracker":
-    st.header("Application Tracker")
-
-    with st.form("application_form"):
-        company = st.text_input("Company")
-        role = st.text_input("Role")
-        location = st.text_input("Location")
-        job_link = st.text_input("Job Link")
-        status = st.selectbox("Status", ["Not Applied", "Applied", "Interview", "Rejected", "Offer"])
-        notes = st.text_area("Notes")
-
-        submitted = st.form_submit_button("Save Application")
-
-        if submitted:
-            save_application(company, role, location, job_link, status, notes)
-            st.success("Application saved successfully.")
-
-    st.subheader("Saved Applications")
-
-    applications = get_all_applications()
-
-    if applications:
-        df = pd.DataFrame(
-            applications,
-            columns=["ID", "Company", "Role", "Location", "Job Link", "Status", "Notes", "Applied Date"]
+    if source_df.empty:
+        st.info(
+            "Source analytics will appear after applications are tracked."
         )
-        st.dataframe(df, use_container_width=True)
     else:
-        st.info("No applications saved yet.")
+        st.dataframe(
+            source_df,
+            width="stretch",
+            hide_index=True,
+        )
 
-elif menu == "Career Coach":
-    st.header("AI Career Coach")
+st.divider()
 
-    total_applications = get_total_applications()
+skill_col, insight_col = st.columns(2)
 
-    st.metric("Total Applications", total_applications)
-    st.write(get_career_advice(total_applications))
+with skill_col:
+    st.subheader(
+        "Most Frequent Matched Skills"
+    )
 
-    st.subheader("Today’s Focus")
-    st.write("1. Apply to strong-match jobs.")
-    st.write("2. Tailor your resume before applying.")
-    st.write("3. Send recruiter messages for important companies.")
+    skill_df = pd.DataFrame(
+        snapshot["skills"]
+    )
+
+    if skill_df.empty:
+        st.info(
+            "Save or queue jobs to build the skill profile."
+        )
+    else:
+        st.bar_chart(
+            skill_df.set_index(
+                "skill"
+            )["count"],
+            height=300,
+        )
+
+with insight_col:
+    st.subheader(
+        "CareerPilot Insights"
+    )
+
+    for insight in snapshot[
+        "insights"
+    ]:
+        st.info(insight)
+
+st.divider()
+
+st.subheader(
+    "Recent Activity"
+)
+
+activity = snapshot[
+    "recent_activity"
+]
+
+if not activity:
+    st.info(
+        "Your recent job-search activity will appear here."
+    )
+else:
+    activity_df = pd.DataFrame(
+        activity
+    )
+
+    st.dataframe(
+        activity_df[
+            [
+                "timestamp",
+                "category",
+                "activity",
+            ]
+        ],
+        width="stretch",
+        hide_index=True,
+    )
+
+with st.sidebar:
+    st.header(
+        "CareerPilot Status"
+    )
+    st.metric(
+        "Generated Resumes",
+        metrics[
+            "generated_resumes"
+        ],
+    )
+    st.metric(
+        "Follow-ups",
+        len(
+            snapshot[
+                "followups"
+            ]
+        ),
+    )
+    st.caption(
+        "Use the page navigation above to access "
+        "Job Search, Application Copilot, Recruiter Outreach, "
+        "Auto Apply Assistant, and Application CRM."
+    )
