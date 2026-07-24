@@ -1,0 +1,47 @@
+name: CareerPilot Daily Job Digest
+
+on:
+  schedule:
+    # 08:00 IST = 02:30 UTC. Runs Mon-Sat.
+    - cron: "30 2 * * 1-6"
+  workflow_dispatch: {}   # lets you trigger it manually from the Actions tab
+
+permissions:
+  contents: read
+
+jobs:
+  daily-digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run daily digest and email it
+        env:
+          CAREERPILOT_SMTP_HOST: ${{ secrets.CAREERPILOT_SMTP_HOST }}
+          CAREERPILOT_SMTP_PORT: ${{ secrets.CAREERPILOT_SMTP_PORT }}
+          CAREERPILOT_SENDER_EMAIL: ${{ secrets.CAREERPILOT_SENDER_EMAIL }}
+          CAREERPILOT_EMAIL_APP_PASSWORD: ${{ secrets.CAREERPILOT_EMAIL_APP_PASSWORD }}
+          CAREERPILOT_RECIPIENT_EMAIL: ${{ secrets.CAREERPILOT_RECIPIENT_EMAIL }}
+        run: python scripts/run_daily_digest.py --send-email
+
+      - name: Upload digest artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: careerpilot-digest-${{ github.run_id }}
+          path: |
+            exports/reports/*
+          if-no-files-found: ignore
+          retention-days: 14
