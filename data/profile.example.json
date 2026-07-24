@@ -1,0 +1,35 @@
+{
+  "name": "Vishal Basavaraj Banakar",
+  "email": "vishalbanakar321@gmail.com",
+  "phone": "",
+  "experience_years": 1.1,
+  "preferred_roles": [
+    "Data Analyst",
+    "Power BI Developer",
+    "Business Analyst",
+    "Application Support Engineer",
+    "Production Support Engineer"
+  ],
+  "preferred_locations": [
+    "Bangalore",
+    "Remote"
+  ],
+  "skills": [
+    "Python",
+    "SQL",
+    "Power BI",
+    "Excel",
+    "Tableau",
+    "Linux",
+    "ServiceNow",
+    "Jira",
+    "Data Analysis"
+  ],
+  "projects": [
+    "Power BI Manufacturing Dashboard",
+    "HR Attendance Dashboard",
+    "Loan Risk Analysis",
+    "SQL Analysis",
+    "Python Data Analysis"
+  ]
+}
