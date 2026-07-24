@@ -1,0 +1,99 @@
+{
+  "naukri": {
+    "enabled": true,
+    "mode": "google_indexed",
+    "note": "Uses Google-indexed Naukri listings; direct Naukri scraping is intentionally not included."
+  },
+  "companies": [
+    {
+      "name": "Accenture",
+      "platform": "indexed",
+      "careers_domain": "accenture.com",
+      "enabled": true
+    },
+    {
+      "name": "Deloitte",
+      "platform": "indexed",
+      "careers_domain": "deloitte.com",
+      "enabled": true
+    },
+    {
+      "name": "EY",
+      "platform": "indexed",
+      "careers_domain": "careers.ey.com",
+      "enabled": true
+    },
+    {
+      "name": "PwC",
+      "platform": "indexed",
+      "careers_domain": "jobs.us.pwc.com",
+      "enabled": true
+    },
+    {
+      "name": "KPMG",
+      "platform": "indexed",
+      "careers_domain": "kpmgcareers.co.in",
+      "enabled": true
+    },
+    {
+      "name": "Amazon",
+      "platform": "indexed",
+      "careers_domain": "amazon.jobs",
+      "enabled": true
+    },
+    {
+      "name": "Microsoft",
+      "platform": "indexed",
+      "careers_domain": "jobs.careers.microsoft.com",
+      "enabled": true
+    },
+    {
+      "name": "IBM",
+      "platform": "indexed",
+      "careers_domain": "careers.ibm.com",
+      "enabled": true
+    },
+    {
+      "name": "Cisco",
+      "platform": "indexed",
+      "careers_domain": "jobs.cisco.com",
+      "enabled": true
+    },
+    {
+      "name": "Oracle",
+      "platform": "indexed",
+      "careers_domain": "careers.oracle.com",
+      "enabled": true
+    },
+    {
+      "name": "SAP",
+      "platform": "indexed",
+      "careers_domain": "jobs.sap.com",
+      "enabled": true
+    },
+    {
+      "name": "Infosys",
+      "platform": "indexed",
+      "careers_domain": "career.infosys.com",
+      "enabled": true
+    },
+    {
+      "name": "Cognizant",
+      "platform": "indexed",
+      "careers_domain": "careers.cognizant.com",
+      "enabled": true
+    },
+    {
+      "name": "Capgemini",
+      "platform": "indexed",
+      "careers_domain": "careers.capgemini.com",
+      "enabled": true
+    },
+    {
+      "name": "Wipro",
+      "platform": "indexed",
+      "careers_domain": "careers.wipro.com",
+      "enabled": true
+    }
+  ]
+}

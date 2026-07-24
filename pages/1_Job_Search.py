@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import math
 
@@ -13,11 +13,12 @@ from app.services.job_repository import (
     save_job,
 )
 from app.services.multi_job_search import load_search_config
+from app.services.job_connectors.registry import enabled_connector_map, connector_groups
 
 
 st.set_page_config(
     page_title="CareerPilot Smart Job Discovery",
-    page_icon="ðŸ”",
+    page_icon="🔍",
     layout="wide",
 )
 
@@ -41,8 +42,10 @@ def display_value(value: object, fallback: str = "Not provided") -> str:
 
 
 config = load_search_config()
+source_groups = connector_groups()
+source_map = enabled_connector_map()
 
-st.title("ðŸ” Smart Job Discovery")
+st.title("🔍 Smart Job Discovery")
 st.caption(
     "Find fresh, suitable jobs; penalize senior roles; "
     "and prioritize opportunities worth applying to."
@@ -81,10 +84,33 @@ with st.sidebar:
         ),
     )
 
-    selected_sites = st.multiselect(
-        "Job sources",
-        ["indeed", "linkedin", "google"],
-        default=["indeed", "linkedin"],
+    st.subheader("Source Manager")
+
+    board_options = source_groups.get("job_board", [])
+    selected_boards = st.multiselect(
+        "General job boards",
+        options=[item.key for item in board_options],
+        default=[
+            item.key for item in board_options
+            if item.key in {"indeed", "linkedin"}
+        ],
+        format_func=lambda key: source_map[key].label,
+    )
+
+    india_options = source_groups.get("india_board", [])
+    selected_india_boards = st.multiselect(
+        "India job platforms",
+        options=[item.key for item in india_options],
+        default=[item.key for item in india_options[:2]],
+        format_func=lambda key: source_map[key].label,
+    )
+
+    ats_options = source_groups.get("ats_platform", [])
+    selected_ats_sources = st.multiselect(
+        "ATS platforms",
+        options=[item.key for item in ats_options],
+        default=[item.key for item in ats_options[:2]],
+        format_func=lambda key: source_map[key].label,
     )
 
     posted_within = st.selectbox(
@@ -123,9 +149,35 @@ with st.sidebar:
         step=5,
     )
 
+    maximum_required_experience = st.slider(
+        "Maximum required experience",
+        min_value=0.0,
+        max_value=5.0,
+        value=float(config.get("maximum_required_experience", 2.0)),
+        step=0.5,
+        help="Jobs with a detected minimum above this value are rejected before ranking.",
+    )
+
     exclude_senior = st.checkbox(
         "Exclude senior roles",
-        value=True,
+        value=bool(config.get("exclude_senior_roles", True)),
+    )
+
+    st.divider()
+    company_options = source_groups.get("company_careers", [])
+    selected_companies = st.multiselect(
+        "Official company career sites",
+        options=[item.key for item in company_options],
+        default=[item.key for item in company_options[:5]],
+        format_func=lambda key: source_map[key].label,
+        help="Start with five companies for better speed.",
+    )
+
+    selected_source_keys = (
+        selected_boards
+        + selected_india_boards
+        + selected_ats_sources
+        + selected_companies
     )
 
     run_search = st.button(
@@ -136,8 +188,13 @@ with st.sidebar:
 
 
 if run_search:
-    if not selected_sites:
-        st.error("Select at least one job source.")
+    no_sources_selected = not selected_source_keys
+
+    if no_sources_selected:
+        st.error(
+            "Select at least one source: a job board, Naukri, "
+            "or an official company-careers source."
+        )
     elif search_mode == "Custom role" and not custom_role.strip():
         st.error("Enter a role to search.")
     else:
@@ -154,12 +211,17 @@ if run_search:
                 result = run_pipeline(
                     roles=roles,
                     location=location.strip(),
-                    sites=selected_sites,
+                    sites=[],
                     results_per_role=results_per_role,
                     hours_old=posted_within[1],
                     minimum_match_score=minimum_score,
                     maximum_jobs=maximum_jobs,
                     exclude_senior_roles=exclude_senior,
+                    maximum_required_experience=maximum_required_experience,
+                    include_naukri=False,
+                    include_company_careers=False,
+                    selected_companies=[],
+                    selected_source_keys=selected_source_keys,
                 )
 
                 st.session_state["smart_job_results"] = result["jobs"]
@@ -179,26 +241,44 @@ jobs = st.session_state["smart_job_results"]
 all_ranked_jobs = st.session_state["smart_job_all_ranked"]
 summary = st.session_state["smart_job_summary"]
 
-metric1, metric2, metric3, metric4 = st.columns(4)
+metric1, metric2, metric3, metric4, metric5 = st.columns(5)
 
-metric1.metric(
-    "Roles Searched",
-    summary.get("searched_roles", 0),
+metric1.metric("Roles Searched", summary.get("searched_roles", 0))
+metric2.metric("Jobs Collected", summary.get("jobs_found", 0))
+metric3.metric("Duplicates Removed", summary.get("duplicates_removed", 0))
+metric4.metric("Experience Rejected", summary.get("experience_rejected", 0))
+metric5.metric("Recommended Jobs", summary.get("recommended_jobs", 0))
+
+source_counts = summary.get("source_counts", {})
+st.caption(
+    "Collected — "
+    f"General boards: {source_counts.get('job_boards', 0)} | "
+    f"India boards: {source_counts.get('india_boards', 0)} | "
+    f"Company careers: {source_counts.get('company_careers', 0)} | "
+    f"ATS platforms: {source_counts.get('ats_platforms', 0)} | "
+    f"Saved jobs: {get_saved_job_count()}"
 )
-metric2.metric(
-    "Jobs Collected",
-    summary.get("jobs_found", 0),
-)
-metric3.metric(
-    "Recommended Jobs",
-    summary.get("recommended_jobs", 0),
-)
-metric4.metric(
-    "Saved Jobs",
-    get_saved_job_count(),
-)
+
+direct_links = summary.get("direct_links", [])
+if direct_links:
+    with st.expander("Open manual job searches"):
+        for item in direct_links:
+            st.link_button(
+                f"Open {item['source']} — {item['role']}",
+                item["url"],
+            )
+
 
 search_errors = summary.get("errors", [])
+source_runs = summary.get("source_runs", [])
+
+if source_runs:
+    with st.expander("Source run report"):
+        st.dataframe(
+            pd.DataFrame(source_runs),
+            width="stretch",
+            hide_index=True,
+        )
 
 if search_errors:
     with st.expander(
@@ -262,7 +342,10 @@ else:
         "company",
         "location",
         "site",
-        "required_experience_years",
+        "experience_label",
+        "eligibility_status",
+        "duplicate_count",
+        "available_sources",
         "matched_skills",
         "resume_version",
     ]
@@ -297,7 +380,7 @@ else:
         job_url = display_value(row.get("job_url"), "")
 
         with st.expander(
-            f"{score}% â€” {title} at {company} â€” {priority}"
+            f"{score}% — {title} at {company} — {priority}"
         ):
             left, right = st.columns([3, 1])
 
@@ -323,22 +406,23 @@ else:
                     f"{display_value(row.get('apply_urgency'), 'Review normally')}"
                 )
 
-                required_experience = row.get(
-                    "required_experience_years"
+                st.write(
+                    f"**Required experience:** "
+                    f"{display_value(row.get('experience_label'), 'Not clearly stated')}"
                 )
+                st.write(
+                    f"**Eligibility:** "
+                    f"{display_value(row.get('eligibility_status'), 'Eligible')}"
+                )
+                evidence = display_value(row.get("experience_evidence"), "")
+                if evidence:
+                    st.caption(f"Detected from JD: {evidence}")
 
-                if (
-                    required_experience is not None
-                    and not pd.isna(required_experience)
-                ):
+                duplicate_count = int(row.get("duplicate_count") or 1)
+                if duplicate_count > 1:
                     st.write(
-                        "**Detected minimum experience:** "
-                        f"{int(required_experience)}+ years"
-                    )
-                else:
-                    st.write(
-                        "**Detected minimum experience:** "
-                        "Not clearly stated"
+                        f"**Merged duplicates:** {duplicate_count} listings "
+                        f"from {display_value(row.get('available_sources'), 'multiple sources')}"
                     )
 
                 st.write(
@@ -363,7 +447,7 @@ else:
                     st.markdown("**Why it matches**")
                     for reason in reasons.split("|"):
                         if reason.strip():
-                            st.write(f"âœ… {reason.strip()}")
+                            st.write(f"✅ {reason.strip()}")
 
                 warnings = display_value(
                     row.get("match_warnings"),
@@ -374,7 +458,7 @@ else:
                     st.markdown("**Warnings**")
                     for warning in warnings.split("|"):
                         if warning.strip():
-                            st.write(f"âš ï¸ {warning.strip()}")
+                            st.write(f"⚠️ {warning.strip()}")
 
                 description = display_value(
                     row.get("description"),

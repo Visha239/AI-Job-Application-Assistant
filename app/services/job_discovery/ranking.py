@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import json
 import re
@@ -298,11 +298,12 @@ def rank_jobs(
     ranked["is_senior_role"] = relevance_results.apply(
         lambda result: result.is_senior_role
     )
-    ranked["required_experience_years"] = (
-        relevance_results.apply(
+    if "experience_min_years" in ranked.columns:
+        ranked["required_experience_years"] = ranked["experience_min_years"]
+    else:
+        ranked["required_experience_years"] = relevance_results.apply(
             lambda result: result.required_experience_years
         )
-    )
     ranked["match_reasons"] = relevance_results.apply(
         lambda result: " | ".join(result.reasons)
     )

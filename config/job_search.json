@@ -14,9 +14,14 @@
     "indeed",
     "linkedin"
   ],
-  "results_per_role": 8,
+  "results_per_role": 20,
   "hours_old": 72,
   "minimum_match_score": 45,
   "maximum_digest_jobs": 20,
-  "prefer_jobs_posted_within_hours": 72
+  "prefer_jobs_posted_within_hours": 72,
+  "maximum_required_experience": 2.0,
+  "exclude_senior_roles": true,
+  "fetch_linkedin_description": true,
+  "include_naukri": true,
+  "include_company_careers": true
 }
