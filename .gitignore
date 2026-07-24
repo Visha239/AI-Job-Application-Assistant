@@ -15,6 +15,7 @@ venv/
 
 # Local databases and private user data
 *.db
+data/profile.json
 data/current_job_context.json
 data/application_queue.json
 data/application_crm.json
