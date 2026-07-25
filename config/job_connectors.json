@@ -1,0 +1,111 @@
+{
+  "version": 1,
+  "connectors": [
+    {
+      "key": "indeed",
+      "label": "Indeed",
+      "connector": "jobspy",
+      "group": "job_board",
+      "enabled": true,
+      "priority": 10,
+      "options": {
+        "site": "indeed"
+      }
+    },
+    {
+      "key": "linkedin",
+      "label": "LinkedIn",
+      "connector": "jobspy",
+      "group": "job_board",
+      "enabled": true,
+      "priority": 20,
+      "options": {
+        "site": "linkedin"
+      }
+    },
+    {
+      "key": "naukri",
+      "label": "Naukri",
+      "connector": "direct_link",
+      "group": "india_board",
+      "enabled": true,
+      "priority": 10,
+      "board_url": "https://www.naukri.com/",
+      "options": {
+        "search_url": "https://www.naukri.com/{role_slug}-jobs-in-{location_slug}"
+      }
+    },
+    {
+      "key": "foundit",
+      "label": "Foundit",
+      "connector": "direct_link",
+      "group": "india_board",
+      "enabled": true,
+      "priority": 20,
+      "board_url": "https://www.foundit.in/",
+      "options": {
+        "search_url": "https://www.foundit.in/srp/results?query={role}&locations={location}"
+      }
+    },
+    {
+      "key": "internshala",
+      "label": "Internshala",
+      "connector": "direct_link",
+      "group": "india_board",
+      "enabled": true,
+      "priority": 30,
+      "board_url": "https://internshala.com/jobs/",
+      "options": {
+        "search_url": "https://internshala.com/jobs/{role_slug}-jobs-in-{location_slug}/"
+      }
+    },
+    {
+      "key": "greenhouse_template",
+      "label": "Greenhouse company board",
+      "connector": "greenhouse",
+      "group": "ats_platform",
+      "enabled": false,
+      "priority": 10,
+      "company": "CONFIGURE COMPANY",
+      "token": "",
+      "board_url": ""
+    },
+    {
+      "key": "lever_template",
+      "label": "Lever company board",
+      "connector": "lever",
+      "group": "ats_platform",
+      "enabled": false,
+      "priority": 20,
+      "company": "CONFIGURE COMPANY",
+      "token": "",
+      "board_url": ""
+    },
+    {
+      "key": "smartrecruiters_template",
+      "label": "SmartRecruiters company board",
+      "connector": "smartrecruiters",
+      "group": "ats_platform",
+      "enabled": false,
+      "priority": 30,
+      "company": "CONFIGURE COMPANY",
+      "token": "",
+      "board_url": ""
+    },
+    {
+      "key": "workday_template",
+      "label": "Workday company board",
+      "connector": "workday",
+      "group": "ats_platform",
+      "enabled": false,
+      "priority": 40,
+      "company": "CONFIGURE COMPANY",
+      "board_url": "",
+      "options": {
+        "tenant": "",
+        "site": "",
+        "host": ""
+      }
+    }
+  ]
+}

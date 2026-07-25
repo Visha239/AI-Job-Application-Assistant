@@ -8,7 +8,13 @@ from typing import Any
 
 import pandas as pd
 
+from app.services.job_discovery.duplicate_detection import merge_duplicate_jobs
+from app.services.job_discovery.eligibility import (
+    annotate_job_eligibility,
+    split_eligible_jobs,
+)
 from app.services.job_ranker import rank_jobs
+from app.services.job_search import search_jobs
 from app.services.job_repository import save_job
 from app.services.job_search import search_jobs
 
@@ -25,7 +31,7 @@ def load_job_search_config(
             f"Job search configuration not found: {config_path}"
         )
 
-    with config_path.open("r", encoding="utf-8") as file:
+    with config_path.open("r", encoding="utf-8-sig") as file:
         config = json.load(file)
 
     required_fields = [
@@ -82,52 +88,29 @@ def collect_jobs(
                 results_wanted=int(config["results_per_role"]),
                 hours_old=int(config["hours_old"]),
                 sites=config["sites"],
+                fetch_linkedin_description=bool(
+                    config.get("fetch_linkedin_description", True)
+                ),
             )
-
             if jobs is None or jobs.empty:
                 continue
-
             jobs = jobs.copy()
             jobs["searched_role"] = role
             collected_frames.append(jobs)
-
         except Exception as exc:
             errors.append(f"{role}: {exc}")
 
     if not collected_frames:
         return _empty_jobs_dataframe(), errors
 
-    combined = pd.concat(
-        collected_frames,
-        ignore_index=True,
-        sort=False,
-    )
-
-    if "job_url" in combined.columns:
-        with_url = combined[
-            combined["job_url"].fillna("").astype(str).str.strip() != ""
-        ]
-
-        without_url = combined[
-            combined["job_url"].fillna("").astype(str).str.strip() == ""
-        ]
-
-        with_url = with_url.drop_duplicates(
-            subset=["job_url"],
-            keep="first",
-        )
-
-        combined = pd.concat(
-            [with_url, without_url],
+    return (
+        pd.concat(
+            collected_frames,
             ignore_index=True,
-        )
-
-    combined = combined.drop_duplicates(
-        subset=["company", "title", "location"],
-        keep="first",
+            sort=False,
+        ),
+        errors,
     )
-
-    return combined.reset_index(drop=True), errors
 
 
 def prepare_ranked_digest(
@@ -137,26 +120,41 @@ def prepare_ranked_digest(
     if jobs is None or jobs.empty:
         return pd.DataFrame()
 
-    ranked = rank_jobs(jobs)
+    deduplicated, _ = merge_duplicate_jobs(jobs)
+    annotated = annotate_job_eligibility(
+        deduplicated,
+        candidate_experience_years=1.1,
+        maximum_required_experience=float(
+            config.get("maximum_required_experience", 2.0)
+        ),
+        exclude_senior_roles=bool(
+            config.get("exclude_senior_roles", True)
+        ),
+    )
+    eligible, _ = split_eligible_jobs(annotated)
 
-    if ranked.empty:
-        return ranked
+    if eligible.empty:
+        return pd.DataFrame()
 
-    minimum_score = int(config["minimum_match_score"])
-    maximum_jobs = int(config["maximum_digest_jobs"])
-
+    ranked = rank_jobs(eligible)
     ranked = ranked[
-        ranked["match_score"] >= minimum_score
+        ranked["match_score"]
+        >= int(config["minimum_match_score"])
     ].copy()
 
     ranked = ranked.sort_values(
-        by=["match_score", "date_posted"],
-        ascending=[False, False],
+        by=[
+            "match_score",
+            "freshness_bonus",
+            "date_posted",
+        ],
+        ascending=[False, False, False],
         na_position="last",
     )
 
-    return ranked.head(maximum_jobs).reset_index(drop=True)
-
+    return ranked.head(
+        int(config["maximum_digest_jobs"])
+    ).reset_index(drop=True)
 
 def save_new_ranked_jobs(
     ranked_jobs: pd.DataFrame,
@@ -384,7 +382,7 @@ def export_digest_files(
 
     html_path.write_text(
         html_content,
-        encoding="utf-8",
+        encoding="utf-8-sig",
     )
 
     if ranked_jobs is None:

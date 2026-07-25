@@ -1,24 +1,43 @@
+# Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+.pytest_cache/
 
+# Virtual environments
 .venv/
 venv/
 
+# Secrets
+.env
+.env.*
+
+# Local databases and private user data
 *.db
+data/profile.json
+data/current_job_context.json
+data/application_queue.json
+data/application_crm.json
+data/outreach_records.json
+data/resume_uploads/
 
-exports/pdf/*
-exports/docx/*
-exports/reports/*
+# Generated files
+exports/*
+!exports/.gitkeep
+logs/
+*.log
 
-!exports/pdf/.gitkeep
-!exports/docx/.gitkeep
-!exports/reports/.gitkeep
+# Sprint installers and temporary backups
+install_sprint*.ps1
+backup/
+old/
+archive/
 
+# Operating system
 .DS_Store
 Thumbs.db
 
-.env
-*.log
-exports/reports/*
+# IDE
+.vscode/
+.idea/
