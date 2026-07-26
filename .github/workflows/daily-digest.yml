@@ -2,9 +2,9 @@ name: CareerPilot Daily Job Digest
 
 on:
   schedule:
-    # 08:00 IST = 02:30 UTC. Runs Mon-Sat.
+    # 08:00 IST = 02:30 UTC. Runs Monday-Saturday.
     - cron: "30 2 * * 1-6"
-  workflow_dispatch: {}
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -41,6 +41,7 @@ jobs:
 
       - name: Run daily digest and email it
         env:
+          PYTHONPATH: ${{ github.workspace }}
           CAREERPILOT_SMTP_HOST: ${{ secrets.CAREERPILOT_SMTP_HOST }}
           CAREERPILOT_SMTP_PORT: ${{ secrets.CAREERPILOT_SMTP_PORT }}
           CAREERPILOT_SENDER_EMAIL: ${{ secrets.CAREERPILOT_SENDER_EMAIL }}
