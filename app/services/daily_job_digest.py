@@ -16,6 +16,7 @@ from app.services.job_discovery.eligibility import (
 from app.services.job_ranker import rank_jobs
 from app.services.job_search import search_jobs
 from app.services.job_repository import save_job
+from app.services.application_tracking import track_ranked_jobs
 from app.services.job_search import search_jobs
 
 
@@ -411,6 +412,7 @@ def run_daily_digest() -> dict[str, Any]:
     )
 
     save_result = save_new_ranked_jobs(ranked_jobs)
+    tracking_result = track_ranked_jobs(ranked_jobs)
 
     export_result = export_digest_files(ranked_jobs)
 
@@ -421,6 +423,9 @@ def run_daily_digest() -> dict[str, Any]:
         "strong_matches": len(ranked_jobs),
         "saved_jobs": save_result["saved"],
         "duplicate_jobs": save_result["duplicates"],
+        "crm_jobs_created": tracking_result["created"],
+        "crm_jobs_updated": tracking_result["updated"],
+        "crm_jobs_existing": tracking_result["existing"],
         "errors": errors,
         "html_path": export_result["html_path"],
         "csv_path": export_result["csv_path"],

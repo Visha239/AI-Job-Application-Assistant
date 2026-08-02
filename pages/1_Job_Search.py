@@ -7,6 +7,10 @@ import streamlit as st
 
 from app.services.application_context import save_selected_job
 from app.services.job_pipeline import run_pipeline
+from app.services.application_tracking import (
+    mark_job_applied,
+    track_job,
+)
 from app.services.job_repository import (
     get_saved_job_count,
     get_saved_jobs,
@@ -357,6 +361,10 @@ else:
     ]
 
     st.subheader("Best Opportunities")
+    st.caption(
+        "Saving, preparing, or marking a job as applied updates "
+        "your CRM and dashboard automatically."
+    )
     st.dataframe(
         jobs[available_columns],
         width="stretch",
@@ -485,13 +493,42 @@ else:
                     key=f"save_{index}_{job_url}",
                     width="stretch",
                 ):
-                    saved = save_job(row.to_dict())
+                    job_data = row.to_dict()
+                    saved = save_job(job_data)
+                    tracked = track_job(
+                        job_data,
+                        stage="Saved",
+                    )
 
-                    if saved:
-                        st.success("Job saved.")
+                    if saved or tracked["created"]:
+                        st.success(
+                            "Job saved and added to your automatic tracker."
+                        )
                         st.rerun()
                     else:
-                        st.warning("This job is already saved.")
+                        st.warning(
+                            "This job is already saved and tracked."
+                        )
+
+                if st.button(
+                    "Mark Applied",
+                    key=f"applied_{index}_{job_url}",
+                    type="primary",
+                    width="stretch",
+                ):
+                    result = mark_job_applied(
+                        row.to_dict()
+                    )
+
+                    if result["created"] or result["updated"]:
+                        st.success(
+                            "Application recorded. Dashboard updated automatically."
+                        )
+                        st.rerun()
+                    else:
+                        st.info(
+                            "This application is already recorded."
+                        )
 
                 if st.button(
                     "Prepare Application",
@@ -499,9 +536,14 @@ else:
                     type="primary",
                     width="stretch",
                 ):
+                    job_data = row.to_dict()
+                    track_job(
+                        job_data,
+                        stage="Ready to Apply",
+                    )
                     save_selected_job(
                         st.session_state,
-                        row.to_dict(),
+                        job_data,
                     )
                     st.switch_page(
                         "pages/2_Apply_Workflow.py"

@@ -81,13 +81,14 @@ metrics = snapshot["metrics"]
 st.title("🚀 CareerPilot AI")
 st.caption(
     f"Welcome, {profile.get('name', 'Vishal')}. "
-    "Your complete job-search command center."
+    "Your complete job-search command center. Counts update automatically "
+"when jobs are discovered or marked as applied."
 )
 
 primary = st.columns(4)
 
 primary[0].metric(
-    "Saved Jobs",
+    "Jobs Collected",
     metrics["saved_jobs"],
 )
 primary[1].metric(
