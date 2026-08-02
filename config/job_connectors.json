@@ -1,24 +1,198 @@
 {
-  "version": 1,
+  "version": 2,
+  "strategy": "official_first",
   "connectors": [
+    {
+      "key": "alphasense_india",
+      "label": "AlphaSense India Careers",
+      "connector": "greenhouse",
+      "group": "company_careers",
+      "enabled": true,
+      "official_source": true,
+      "company": "AlphaSense India",
+      "token": "alphasenseindia",
+      "board_url": "https://boards.greenhouse.io/alphasenseindia",
+      "priority": 10
+    },
+    {
+      "key": "paytm",
+      "label": "Paytm Careers",
+      "connector": "lever",
+      "group": "company_careers",
+      "enabled": true,
+      "official_source": true,
+      "company": "Paytm",
+      "token": "paytm",
+      "board_url": "https://jobs.lever.co/paytm",
+      "priority": 20
+    },
+    {
+      "key": "veeva",
+      "label": "Veeva Careers",
+      "connector": "lever",
+      "group": "company_careers",
+      "enabled": true,
+      "official_source": true,
+      "company": "Veeva Systems",
+      "token": "veeva",
+      "board_url": "https://jobs.lever.co/veeva",
+      "priority": 30
+    },
+    {
+      "key": "hevo_data",
+      "label": "Hevo Data Careers",
+      "connector": "lever",
+      "group": "company_careers",
+      "enabled": true,
+      "official_source": true,
+      "company": "Hevo Data",
+      "token": "hevodata",
+      "board_url": "https://jobs.lever.co/hevodata",
+      "priority": 40
+    },
+    {
+      "key": "brillio",
+      "label": "Brillio Careers",
+      "connector": "lever",
+      "group": "company_careers",
+      "enabled": true,
+      "official_source": true,
+      "company": "Brillio",
+      "token": "brillio-2",
+      "board_url": "https://jobs.lever.co/brillio-2",
+      "priority": 50
+    },
+    {
+      "key": "linkedin_careers",
+      "label": "LinkedIn Official Careers",
+      "connector": "smartrecruiters",
+      "group": "company_careers",
+      "enabled": true,
+      "official_source": true,
+      "company": "LinkedIn",
+      "token": "LinkedIn3",
+      "board_url": "https://careers.smartrecruiters.com/LinkedIn3",
+      "priority": 60
+    },
+    {
+      "key": "nielseniq",
+      "label": "NielsenIQ Careers",
+      "connector": "smartrecruiters",
+      "group": "company_careers",
+      "enabled": true,
+      "official_source": true,
+      "company": "NielsenIQ",
+      "token": "NielsenIQ",
+      "board_url": "https://careers.smartrecruiters.com/NielsenIQ",
+      "priority": 70
+    },
+    {
+      "key": "integrichain",
+      "label": "IntegriChain Careers",
+      "connector": "smartrecruiters",
+      "group": "company_careers",
+      "enabled": true,
+      "official_source": true,
+      "company": "IntegriChain",
+      "token": "IntegriChain1",
+      "board_url": "https://careers.smartrecruiters.com/IntegriChain1",
+      "priority": 80
+    },
+    {
+      "key": "grab",
+      "label": "Grab Careers",
+      "connector": "smartrecruiters",
+      "group": "company_careers",
+      "enabled": true,
+      "official_source": true,
+      "company": "Grab",
+      "token": "Grab",
+      "board_url": "https://careers.smartrecruiters.com/Grab",
+      "priority": 90
+    },
+    {
+      "key": "metro_makro",
+      "label": "METRO/MAKRO Careers",
+      "connector": "smartrecruiters",
+      "group": "company_careers",
+      "enabled": true,
+      "official_source": true,
+      "company": "METRO/MAKRO",
+      "token": "METROMAKRO",
+      "board_url": "https://careers.smartrecruiters.com/METROMAKRO",
+      "priority": 100
+    },
+    {
+      "key": "kyndryl",
+      "label": "Kyndryl Careers",
+      "connector": "workday",
+      "group": "company_careers",
+      "enabled": true,
+      "official_source": true,
+      "company": "Kyndryl",
+      "board_url": "https://kyndryl.wd5.myworkdayjobs.com/KyndrylProfessionalCareers",
+      "priority": 110,
+      "options": {
+        "tenant": "kyndryl",
+        "site": "KyndrylProfessionalCareers",
+        "host": "kyndryl.wd5.myworkdayjobs.com",
+        "locale": "en-US"
+      }
+    },
+    {
+      "key": "lilly",
+      "label": "Lilly Careers",
+      "connector": "workday",
+      "group": "company_careers",
+      "enabled": true,
+      "official_source": true,
+      "company": "Lilly",
+      "board_url": "https://lilly.wd5.myworkdayjobs.com/LLY",
+      "priority": 120,
+      "options": {
+        "tenant": "lilly",
+        "site": "LLY",
+        "host": "lilly.wd5.myworkdayjobs.com",
+        "locale": "en-US"
+      }
+    },
+    {
+      "key": "miq",
+      "label": "MiQ Careers",
+      "connector": "workday",
+      "group": "company_careers",
+      "enabled": true,
+      "official_source": true,
+      "company": "MiQ",
+      "board_url": "https://miqdigital.wd3.myworkdayjobs.com/MiQ_Careers",
+      "priority": 130,
+      "options": {
+        "tenant": "miqdigital",
+        "site": "MiQ_Careers",
+        "host": "miqdigital.wd3.myworkdayjobs.com",
+        "locale": "en-US"
+      }
+    },
     {
       "key": "indeed",
       "label": "Indeed",
       "connector": "jobspy",
       "group": "job_board",
       "enabled": true,
-      "priority": 10,
+      "official_source": false,
+      "priority": 210,
       "options": {
         "site": "indeed"
       }
     },
     {
       "key": "linkedin",
-      "label": "LinkedIn",
+      "label": "LinkedIn Jobs",
       "connector": "jobspy",
       "group": "job_board",
       "enabled": true,
-      "priority": 20,
+      "official_source": false,
+      "priority": 220,
       "options": {
         "site": "linkedin"
       }
@@ -29,7 +203,8 @@
       "connector": "direct_link",
       "group": "india_board",
       "enabled": true,
-      "priority": 10,
+      "official_source": false,
+      "priority": 310,
       "board_url": "https://www.naukri.com/",
       "options": {
         "search_url": "https://www.naukri.com/{role_slug}-jobs-in-{location_slug}"
@@ -41,7 +216,8 @@
       "connector": "direct_link",
       "group": "india_board",
       "enabled": true,
-      "priority": 20,
+      "official_source": false,
+      "priority": 320,
       "board_url": "https://www.foundit.in/",
       "options": {
         "search_url": "https://www.foundit.in/srp/results?query={role}&locations={location}"
@@ -53,58 +229,11 @@
       "connector": "direct_link",
       "group": "india_board",
       "enabled": true,
-      "priority": 30,
+      "official_source": false,
+      "priority": 330,
       "board_url": "https://internshala.com/jobs/",
       "options": {
         "search_url": "https://internshala.com/jobs/{role_slug}-jobs-in-{location_slug}/"
-      }
-    },
-    {
-      "key": "greenhouse_template",
-      "label": "Greenhouse company board",
-      "connector": "greenhouse",
-      "group": "ats_platform",
-      "enabled": false,
-      "priority": 10,
-      "company": "CONFIGURE COMPANY",
-      "token": "",
-      "board_url": ""
-    },
-    {
-      "key": "lever_template",
-      "label": "Lever company board",
-      "connector": "lever",
-      "group": "ats_platform",
-      "enabled": false,
-      "priority": 20,
-      "company": "CONFIGURE COMPANY",
-      "token": "",
-      "board_url": ""
-    },
-    {
-      "key": "smartrecruiters_template",
-      "label": "SmartRecruiters company board",
-      "connector": "smartrecruiters",
-      "group": "ats_platform",
-      "enabled": false,
-      "priority": 30,
-      "company": "CONFIGURE COMPANY",
-      "token": "",
-      "board_url": ""
-    },
-    {
-      "key": "workday_template",
-      "label": "Workday company board",
-      "connector": "workday",
-      "group": "ats_platform",
-      "enabled": false,
-      "priority": 40,
-      "company": "CONFIGURE COMPANY",
-      "board_url": "",
-      "options": {
-        "tenant": "",
-        "site": "",
-        "host": ""
       }
     }
   ]

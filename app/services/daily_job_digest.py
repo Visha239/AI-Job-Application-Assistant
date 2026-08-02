@@ -14,10 +14,9 @@ from app.services.job_discovery.eligibility import (
     split_eligible_jobs,
 )
 from app.services.job_ranker import rank_jobs
-from app.services.job_search import search_jobs
+from app.services.job_connectors.engine import collect_jobs as collect_connector_jobs
 from app.services.job_repository import save_job
 from app.services.application_tracking import track_ranked_jobs
-from app.services.job_search import search_jobs
 
 
 CONFIG_PATH = Path("config/job_search.json")
@@ -77,41 +76,30 @@ def _empty_jobs_dataframe() -> pd.DataFrame:
 
 def collect_jobs(
     config: dict[str, Any],
-) -> tuple[pd.DataFrame, list[str]]:
-    collected_frames: list[pd.DataFrame] = []
-    errors: list[str] = []
-
-    for role in config["roles"]:
-        try:
-            jobs = search_jobs(
-                search_term=role,
-                location=config["location"],
-                results_wanted=int(config["results_per_role"]),
-                hours_old=int(config["hours_old"]),
-                sites=config["sites"],
-                fetch_linkedin_description=bool(
-                    config.get("fetch_linkedin_description", True)
-                ),
-            )
-            if jobs is None or jobs.empty:
-                continue
-            jobs = jobs.copy()
-            jobs["searched_role"] = role
-            collected_frames.append(jobs)
-        except Exception as exc:
-            errors.append(f"{role}: {exc}")
-
-    if not collected_frames:
-        return _empty_jobs_dataframe(), errors
-
-    return (
-        pd.concat(
-            collected_frames,
-            ignore_index=True,
-            sort=False,
-        ),
-        errors,
+) -> tuple[pd.DataFrame, list[str], dict[str, Any]]:
+    source_keys = list(
+        config.get("daily_source_keys")
+        or config.get("sites")
+        or ["indeed", "linkedin"]
     )
+
+    jobs, errors, source_counts, source_runs, direct_links = (
+        collect_connector_jobs(
+            roles=list(config["roles"]),
+            location=str(config["location"]),
+            selected_source_keys=source_keys,
+            results_per_role=int(config["results_per_role"]),
+            hours_old=int(config["hours_old"]),
+        )
+    )
+
+    metadata = {
+        "source_keys": source_keys,
+        "source_counts": source_counts,
+        "source_runs": source_runs,
+        "direct_links": direct_links,
+    }
+    return jobs, errors, metadata
 
 
 def prepare_ranked_digest(
@@ -404,7 +392,7 @@ def export_digest_files(
 def run_daily_digest() -> dict[str, Any]:
     config = load_job_search_config()
 
-    collected_jobs, errors = collect_jobs(config)
+    collected_jobs, errors, source_metadata = collect_jobs(config)
 
     ranked_jobs = prepare_ranked_digest(
         collected_jobs,
@@ -427,6 +415,9 @@ def run_daily_digest() -> dict[str, Any]:
         "crm_jobs_updated": tracking_result["updated"],
         "crm_jobs_existing": tracking_result["existing"],
         "errors": errors,
+        "source_counts": source_metadata["source_counts"],
+        "source_runs": source_metadata["source_runs"],
+        "direct_links": source_metadata["direct_links"],
         "html_path": export_result["html_path"],
         "csv_path": export_result["csv_path"],
     }

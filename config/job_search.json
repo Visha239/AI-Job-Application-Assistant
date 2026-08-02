@@ -23,5 +23,23 @@
   "exclude_senior_roles": true,
   "fetch_linkedin_description": true,
   "include_naukri": true,
-  "include_company_careers": true
+  "include_company_careers": true,
+  "daily_source_keys": [
+    "alphasense_india",
+    "paytm",
+    "veeva",
+    "hevo_data",
+    "brillio",
+    "linkedin_careers",
+    "nielseniq",
+    "integrichain",
+    "grab",
+    "metro_makro",
+    "kyndryl",
+    "lilly",
+    "miq",
+    "indeed",
+    "linkedin"
+  ],
+  "source_strategy": "official_first"
 }

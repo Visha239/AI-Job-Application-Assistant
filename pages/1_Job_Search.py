@@ -6,6 +6,10 @@ import pandas as pd
 import streamlit as st
 
 from app.services.application_context import save_selected_job
+from app.services.application_crm import load_crm
+from app.services.interview_action_dashboard import (
+    filter_actionable_search_results,
+)
 from app.services.job_pipeline import run_pipeline
 from app.services.application_tracking import (
     mark_job_applied,
@@ -88,34 +92,38 @@ with st.sidebar:
         ),
     )
 
-    st.subheader("Source Manager")
+    st.subheader("Priority 1 — Official company careers")
+    company_options = source_groups.get("company_careers", [])
+    selected_companies = st.multiselect(
+        "Official ATS and company career sites",
+        options=[item.key for item in company_options],
+        default=[item.key for item in company_options[:8]],
+        format_func=lambda key: source_map[key].label,
+        help=(
+            "These sources are checked before job portals. Start with 5–8 "
+            "companies for faster searches."
+        ),
+    )
 
+    st.subheader("Priority 2 — General job boards")
     board_options = source_groups.get("job_board", [])
     selected_boards = st.multiselect(
-        "General job boards",
+        "LinkedIn and Indeed",
         options=[item.key for item in board_options],
-        default=[
-            item.key for item in board_options
-            if item.key in {"indeed", "linkedin"}
-        ],
+        default=[item.key for item in board_options],
         format_func=lambda key: source_map[key].label,
     )
 
+    st.subheader("Priority 3 — Manual India searches")
     india_options = source_groups.get("india_board", [])
     selected_india_boards = st.multiselect(
-        "India job platforms",
+        "Naukri, Foundit and Internshala",
         options=[item.key for item in india_options],
         default=[item.key for item in india_options[:2]],
         format_func=lambda key: source_map[key].label,
     )
 
-    ats_options = source_groups.get("ats_platform", [])
-    selected_ats_sources = st.multiselect(
-        "ATS platforms",
-        options=[item.key for item in ats_options],
-        default=[item.key for item in ats_options[:2]],
-        format_func=lambda key: source_map[key].label,
-    )
+    selected_ats_sources = []
 
     posted_within = st.selectbox(
         "Posted within",
@@ -168,15 +176,6 @@ with st.sidebar:
     )
 
     st.divider()
-    company_options = source_groups.get("company_careers", [])
-    selected_companies = st.multiselect(
-        "Official company career sites",
-        options=[item.key for item in company_options],
-        default=[item.key for item in company_options[:5]],
-        format_func=lambda key: source_map[key].label,
-        help="Start with five companies for better speed.",
-    )
-
     selected_source_keys = (
         selected_boards
         + selected_india_boards
@@ -245,6 +244,16 @@ jobs = st.session_state["smart_job_results"]
 all_ranked_jobs = st.session_state["smart_job_all_ranked"]
 summary = st.session_state["smart_job_summary"]
 
+jobs, hidden_applied_jobs = filter_actionable_search_results(
+    jobs,
+    load_crm(),
+)
+
+if summary:
+    summary = dict(summary)
+    summary["recommended_jobs"] = len(jobs)
+    summary["already_applied_hidden"] = hidden_applied_jobs
+
 metric1, metric2, metric3, metric4, metric5 = st.columns(5)
 
 metric1.metric("Roles Searched", summary.get("searched_roles", 0))
@@ -258,8 +267,9 @@ st.caption(
     "Collected — "
     f"General boards: {source_counts.get('job_boards', 0)} | "
     f"India boards: {source_counts.get('india_boards', 0)} | "
-    f"Company careers: {source_counts.get('company_careers', 0)} | "
+    f"Official careers: {source_counts.get('official_total', 0)} | "
     f"ATS platforms: {source_counts.get('ats_platforms', 0)} | "
+    f"Already applied hidden: {summary.get('already_applied_hidden', 0)} | "
     f"Saved jobs: {get_saved_job_count()}"
 )
 
@@ -277,7 +287,7 @@ search_errors = summary.get("errors", [])
 source_runs = summary.get("source_runs", [])
 
 if source_runs:
-    with st.expander("Source run report"):
+    with st.expander("Source health and priority report"):
         st.dataframe(
             pd.DataFrame(source_runs),
             width="stretch",

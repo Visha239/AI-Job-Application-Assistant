@@ -1,0 +1,97 @@
+{
+  "strategy": "official_first",
+  "description": "CareerPilot checks official ATS boards before general job portals.",
+  "companies": [
+    {
+      "key": "alphasense_india",
+      "company": "AlphaSense India",
+      "enabled": true,
+      "priority": 10,
+      "connector": "greenhouse"
+    },
+    {
+      "key": "paytm",
+      "company": "Paytm",
+      "enabled": true,
+      "priority": 20,
+      "connector": "lever"
+    },
+    {
+      "key": "veeva",
+      "company": "Veeva Systems",
+      "enabled": true,
+      "priority": 30,
+      "connector": "lever"
+    },
+    {
+      "key": "hevo_data",
+      "company": "Hevo Data",
+      "enabled": true,
+      "priority": 40,
+      "connector": "lever"
+    },
+    {
+      "key": "brillio",
+      "company": "Brillio",
+      "enabled": true,
+      "priority": 50,
+      "connector": "lever"
+    },
+    {
+      "key": "linkedin_careers",
+      "company": "LinkedIn",
+      "enabled": true,
+      "priority": 60,
+      "connector": "smartrecruiters"
+    },
+    {
+      "key": "nielseniq",
+      "company": "NielsenIQ",
+      "enabled": true,
+      "priority": 70,
+      "connector": "smartrecruiters"
+    },
+    {
+      "key": "integrichain",
+      "company": "IntegriChain",
+      "enabled": true,
+      "priority": 80,
+      "connector": "smartrecruiters"
+    },
+    {
+      "key": "grab",
+      "company": "Grab",
+      "enabled": true,
+      "priority": 90,
+      "connector": "smartrecruiters"
+    },
+    {
+      "key": "metro_makro",
+      "company": "METRO/MAKRO",
+      "enabled": true,
+      "priority": 100,
+      "connector": "smartrecruiters"
+    },
+    {
+      "key": "kyndryl",
+      "company": "Kyndryl",
+      "enabled": true,
+      "priority": 110,
+      "connector": "workday"
+    },
+    {
+      "key": "lilly",
+      "company": "Lilly",
+      "enabled": true,
+      "priority": 120,
+      "connector": "workday"
+    },
+    {
+      "key": "miq",
+      "company": "MiQ",
+      "enabled": true,
+      "priority": 130,
+      "connector": "workday"
+    }
+  ]
+}

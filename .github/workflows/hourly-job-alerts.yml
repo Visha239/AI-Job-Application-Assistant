@@ -1,0 +1,75 @@
+name: CareerPilot Hourly Job Alerts
+
+on:
+  schedule:
+    # Runs once per hour. GitHub may start scheduled workflows a little late.
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: careerpilot-hourly-job-alert
+  cancel-in-progress: false
+
+jobs:
+  hourly-alert:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Restore alert state
+        uses: actions/cache/restore@v4
+        with:
+          path: data/hourly_alert_state.json
+          key: careerpilot-hourly-state-${{ github.run_id }}
+          restore-keys: |
+            careerpilot-hourly-state-
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Create private profile
+        shell: bash
+        env:
+          CAREERPILOT_PROFILE_JSON: ${{ secrets.CAREERPILOT_PROFILE_JSON }}
+        run: |
+          mkdir -p data
+          printf '%s' "$CAREERPILOT_PROFILE_JSON" > data/profile.json
+          python -m json.tool data/profile.json > /dev/null
+
+      - name: Search and notify new high-priority jobs
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+          CAREERPILOT_SMTP_HOST: ${{ secrets.CAREERPILOT_SMTP_HOST }}
+          CAREERPILOT_SMTP_PORT: ${{ secrets.CAREERPILOT_SMTP_PORT }}
+          CAREERPILOT_SENDER_EMAIL: ${{ secrets.CAREERPILOT_SENDER_EMAIL }}
+          CAREERPILOT_EMAIL_APP_PASSWORD: ${{ secrets.CAREERPILOT_EMAIL_APP_PASSWORD }}
+          CAREERPILOT_RECIPIENT_EMAIL: ${{ secrets.CAREERPILOT_RECIPIENT_EMAIL }}
+        run: python -m scripts.run_hourly_job_alert --minimum-score 80
+
+      - name: Save alert state
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data/hourly_alert_state.json
+          key: careerpilot-hourly-state-${{ github.run_id }}
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: careerpilot-hourly-${{ github.run_id }}
+          path: exports/reports/*
+          if-no-files-found: ignore
+          retention-days: 7

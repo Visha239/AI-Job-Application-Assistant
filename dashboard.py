@@ -9,6 +9,15 @@ import streamlit as st
 from app.services.application_crm import (
     load_crm,
 )
+from app.services.interview_action_dashboard import (
+    APPLICATION_EDITOR_STAGES,
+    FRESH_EDITOR_STAGES,
+    application_summary,
+    build_application_tracker_table,
+    build_fresh_opportunity_table,
+    persist_application_statuses,
+    persist_fresh_opportunity_statuses,
+)
 from app.services.application_queue import (
     load_queue,
 )
@@ -68,8 +77,11 @@ st.set_page_config(
 
 profile = load_profile()
 
+crm_records = load_crm()
+action_metrics = application_summary(crm_records)
+
 snapshot = build_dashboard_snapshot(
-    crm_records=load_crm(),
+    crm_records=crm_records,
     queue=load_queue(),
     outreach_records=load_records(),
     saved_jobs=safe_saved_jobs(),
@@ -88,8 +100,8 @@ st.caption(
 primary = st.columns(4)
 
 primary[0].metric(
-    "Jobs Collected",
-    metrics["saved_jobs"],
+    "Fresh Jobs",
+    action_metrics["fresh"],
 )
 primary[1].metric(
     "Ready to Apply",
@@ -163,6 +175,197 @@ with action4:
         st.switch_page(
             "pages/9_Recruiter_Outreach.py"
         )
+
+st.divider()
+
+st.header("Fresh Opportunities")
+st.caption(
+    "Only jobs that still need action are shown here. Change Status to "
+    "Applied and save; the job will immediately move to Application Tracker "
+    "and will not appear in future job-search results."
+)
+
+fresh_limit = st.select_slider(
+    "Fresh opportunities to display",
+    options=[5, 10, 15, 20, 30, 50],
+    value=20,
+)
+
+fresh_df = build_fresh_opportunity_table(
+    crm_records,
+    limit=fresh_limit,
+)
+
+if fresh_df.empty:
+    st.info(
+        "No fresh tracked opportunities are waiting for action. "
+        "Run Job Search or wait for the hourly monitor."
+    )
+else:
+    fresh_columns = [
+        "record_id",
+        "match_score",
+        "company",
+        "role",
+        "source",
+        "location",
+        "job_link",
+        "stage",
+    ]
+
+    edited_fresh_df = st.data_editor(
+        fresh_df[fresh_columns],
+        width="stretch",
+        hide_index=True,
+        num_rows="fixed",
+        disabled=[
+            "record_id",
+            "match_score",
+            "company",
+            "role",
+            "source",
+            "location",
+            "job_link",
+        ],
+        column_config={
+            "record_id": None,
+            "match_score": st.column_config.ProgressColumn(
+                "Match",
+                min_value=0,
+                max_value=100,
+                format="%d%%",
+            ),
+            "company": st.column_config.TextColumn("Company"),
+            "role": st.column_config.TextColumn("Job"),
+            "source": st.column_config.TextColumn("Source"),
+            "location": st.column_config.TextColumn("Location"),
+            "job_link": st.column_config.LinkColumn(
+                "Open Job",
+                display_text="Open",
+            ),
+            "stage": st.column_config.SelectboxColumn(
+                "Status",
+                options=FRESH_EDITOR_STAGES,
+                required=True,
+            ),
+        },
+        key="fresh_opportunities_editor",
+    )
+
+    if st.button(
+        "Save Fresh Job Status",
+        type="primary",
+        width="stretch",
+    ):
+        result = persist_fresh_opportunity_statuses(
+            fresh_df,
+            edited_fresh_df,
+        )
+
+        if result["errors"]:
+            st.error(
+                f"Saved {result['updated']} change(s), but "
+                f"{result['errors']} change(s) failed."
+            )
+        elif result["updated"]:
+            st.success(
+                f"Updated {result['updated']} job(s). Applied jobs moved "
+                "to Application Tracker."
+            )
+            st.rerun()
+        else:
+            st.info("No fresh-job status changes were detected.")
+
+st.subheader(
+    f"Application Tracker — {action_metrics['applied_total']} applied"
+)
+st.caption(
+    "This table contains only submitted applications and later stages. "
+    "Update progress here when a recruiter responds."
+)
+
+applications_df = build_application_tracker_table(crm_records)
+
+if applications_df.empty:
+    st.info("You have not marked any jobs as applied yet.")
+else:
+    application_columns = [
+        "record_id",
+        "company",
+        "role",
+        "source",
+        "match_score",
+        "applied_date",
+        "stage",
+        "job_link",
+    ]
+
+    edited_applications_df = st.data_editor(
+        applications_df[application_columns],
+        width="stretch",
+        hide_index=True,
+        num_rows="fixed",
+        disabled=[
+            "record_id",
+            "company",
+            "role",
+            "source",
+            "match_score",
+            "applied_date",
+            "job_link",
+        ],
+        column_config={
+            "record_id": None,
+            "company": st.column_config.TextColumn("Company"),
+            "role": st.column_config.TextColumn("Job"),
+            "source": st.column_config.TextColumn("Source"),
+            "match_score": st.column_config.ProgressColumn(
+                "Match",
+                min_value=0,
+                max_value=100,
+                format="%d%%",
+            ),
+            "applied_date": st.column_config.DateColumn(
+                "Applied Date",
+                format="DD-MM-YYYY",
+            ),
+            "stage": st.column_config.SelectboxColumn(
+                "Current Stage",
+                options=APPLICATION_EDITOR_STAGES,
+                required=True,
+            ),
+            "job_link": st.column_config.LinkColumn(
+                "Job Link",
+                display_text="Open",
+            ),
+        },
+        key="application_tracker_editor",
+    )
+
+    if st.button(
+        "Save Application Progress",
+        width="stretch",
+    ):
+        result = persist_application_statuses(
+            applications_df,
+            edited_applications_df,
+        )
+
+        if result["errors"]:
+            st.error(
+                f"Saved {result['updated']} change(s), but "
+                f"{result['errors']} change(s) failed."
+            )
+        elif result["updated"]:
+            st.success(
+                f"Updated {result['updated']} application(s). "
+                "Dashboard totals refreshed."
+            )
+            st.rerun()
+        else:
+            st.info("No application-stage changes were detected.")
+
+st.divider()
 
 left, right = st.columns(
     [3, 2]
