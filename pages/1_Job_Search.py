@@ -6,9 +6,11 @@ import pandas as pd
 import streamlit as st
 
 from app.services.application_context import save_selected_job
-from app.services.application_crm import load_crm
-from app.services.interview_action_dashboard import (
-    filter_actionable_search_results,
+from app.services.live_job_crm import (
+    FRESH_EDITOR_STAGES,
+    build_live_search_editor,
+    persist_live_search_statuses,
+    sync_search_results_to_crm,
 )
 from app.services.job_pipeline import run_pipeline
 from app.services.application_tracking import (
@@ -227,11 +229,19 @@ if run_search:
                     selected_source_keys=selected_source_keys,
                 )
 
+                sync_result = sync_search_results_to_crm(
+                    result["jobs"]
+                )
+
                 st.session_state["smart_job_results"] = result["jobs"]
                 st.session_state["smart_job_all_ranked"] = result[
                     "all_ranked_jobs"
                 ]
-                st.session_state["smart_job_summary"] = result["summary"]
+                st.session_state["smart_job_summary"] = {
+                    **result["summary"],
+                    "crm_created": sync_result["created"],
+                    "crm_existing": sync_result["existing"],
+                }
 
             except Exception as exc:
                 st.session_state["smart_job_results"] = pd.DataFrame()
@@ -244,14 +254,13 @@ jobs = st.session_state["smart_job_results"]
 all_ranked_jobs = st.session_state["smart_job_all_ranked"]
 summary = st.session_state["smart_job_summary"]
 
-jobs, hidden_applied_jobs = filter_actionable_search_results(
-    jobs,
-    load_crm(),
+live_jobs, hidden_applied_jobs = build_live_search_editor(
+    jobs
 )
 
 if summary:
     summary = dict(summary)
-    summary["recommended_jobs"] = len(jobs)
+    summary["recommended_jobs"] = len(live_jobs)
     summary["already_applied_hidden"] = hidden_applied_jobs
 
 metric1, metric2, metric3, metric4, metric5 = st.columns(5)
@@ -301,7 +310,7 @@ if search_errors:
         for error in search_errors:
             st.warning(error)
 
-if summary and jobs.empty:
+if summary and live_jobs.empty:
     st.warning(
         "The search worked, but no job met the current filters. "
         "Reduce the minimum score or include older postings."
@@ -342,49 +351,101 @@ elif not summary:
 
 else:
     st.success(
-        f"Found {len(jobs)} recommended job"
-        f"{'s' if len(jobs) != 1 else ''}."
+        f"Found {len(live_jobs)} recommended job"
+        f"{'s' if len(live_jobs) != 1 else ''}."
     )
 
-    table_columns = [
-        "match_score",
-        "priority",
-        "freshness_label",
-        "apply_urgency",
-        "date_posted",
-        "title",
-        "company",
-        "location",
-        "site",
-        "experience_label",
-        "eligibility_status",
-        "duplicate_count",
-        "available_sources",
-        "matched_skills",
-        "resume_version",
-    ]
-
-    available_columns = [
-        column
-        for column in table_columns
-        if column in jobs.columns
-    ]
-
-    st.subheader("Best Opportunities")
+    st.subheader("Live Job Search Results")
     st.caption(
-        "Saving, preparing, or marking a job as applied updates "
-        "your CRM and dashboard automatically."
+        "These are the current search results. Change Status to Applied and "
+        "click Save Status Changes. The job will disappear here, move to the "
+        "Application Tracker, and stay hidden in future searches."
     )
-    st.dataframe(
-        jobs[available_columns],
+
+    editor_columns = [
+        "record_id",
+        "match_score",
+        "company",
+        "title",
+        "site",
+        "location",
+        "date_posted",
+        "job_url",
+        "stage",
+    ]
+
+    edited_live_jobs = st.data_editor(
+        live_jobs[editor_columns],
         width="stretch",
         hide_index=True,
+        num_rows="fixed",
+        disabled=[
+            "record_id",
+            "match_score",
+            "company",
+            "title",
+            "site",
+            "location",
+            "date_posted",
+            "job_url",
+        ],
+        column_config={
+            "record_id": None,
+            "match_score": st.column_config.ProgressColumn(
+                "Match",
+                min_value=0,
+                max_value=100,
+                format="%d%%",
+            ),
+            "company": st.column_config.TextColumn("Company"),
+            "title": st.column_config.TextColumn("Job"),
+            "site": st.column_config.TextColumn("Source"),
+            "location": st.column_config.TextColumn("Location"),
+            "date_posted": st.column_config.DateColumn(
+                "Posted",
+                format="DD-MM-YYYY",
+            ),
+            "job_url": st.column_config.LinkColumn(
+                "Open Job",
+                display_text="Open",
+            ),
+            "stage": st.column_config.SelectboxColumn(
+                "Status",
+                options=FRESH_EDITOR_STAGES,
+                required=True,
+            ),
+        },
+        key="live_job_search_status_editor",
     )
+
+    if st.button(
+        "Save Status Changes",
+        type="primary",
+        width="stretch",
+    ):
+        status_result = persist_live_search_statuses(
+            live_jobs,
+            edited_live_jobs,
+        )
+
+        if status_result["errors"]:
+            st.error(
+                f"Saved {status_result['updated']} change(s), but "
+                f"{status_result['errors']} change(s) failed."
+            )
+        elif status_result["updated"]:
+            st.success(
+                f"Updated {status_result['updated']} job(s). Applied jobs "
+                "moved to the Application Tracker."
+            )
+            st.rerun()
+        else:
+            st.info("No status changes were detected.")
 
     st.divider()
     st.subheader("Job Details")
 
-    for index, row in jobs.iterrows():
+    for index, row in live_jobs.iterrows():
         score = int(row.get("match_score") or 0)
         title = display_value(row.get("title"), "Unknown Role")
         company = display_value(
