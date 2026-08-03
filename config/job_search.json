@@ -14,7 +14,7 @@
     "indeed",
     "linkedin"
   ],
-  "results_per_role": 20,
+  "results_per_role": 15,
   "hours_old": 72,
   "minimum_match_score": 45,
   "maximum_digest_jobs": 20,
@@ -26,7 +26,23 @@
   "include_company_careers": true,
   "daily_source_keys": [
     "alphasense_india",
+    "jfrog",
+    "inovalon",
+    "zuora",
+    "kaseya",
+    "taboola",
+    "gruve",
+    "certifyos",
     "paytm",
+    "commure",
+    "novo",
+    "hinge_health",
+    "riveron",
+    "nielsen_company",
+    "wns",
+    "sopra_steria",
+    "sandisk",
+    "version1",
     "veeva",
     "hevo_data",
     "brillio",
@@ -36,10 +52,9 @@
     "grab",
     "metro_makro",
     "kyndryl",
-    "lilly",
     "miq",
     "indeed",
     "linkedin"
   ],
-  "source_strategy": "official_first"
+  "source_strategy": "expanded_official_first"
 }

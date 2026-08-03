@@ -94,20 +94,53 @@ with st.sidebar:
         ),
     )
 
-    st.subheader("Priority 1 — Official company careers")
+    ats_options = source_groups.get("ats_platform", [])
     company_options = source_groups.get("company_careers", [])
-    selected_companies = st.multiselect(
-        "Official ATS and company career sites",
-        options=[item.key for item in company_options],
-        default=[item.key for item in company_options[:8]],
-        format_func=lambda key: source_map[key].label,
+
+    st.subheader("Priority 1 — Official ATS sources")
+    search_all_official = st.checkbox(
+        "Search all enabled official sources",
+        value=True,
         help=(
-            "These sources are checked before job portals. Start with 5–8 "
-            "companies for faster searches."
+            "Searches Greenhouse, Lever, Ashby, SmartRecruiters, Workday, "
+            "and configured public feeds before general job boards."
         ),
     )
 
-    st.subheader("Priority 2 — General job boards")
+    selected_ats_sources = st.multiselect(
+        "Official ATS boards",
+        options=[item.key for item in ats_options],
+        default=(
+            [item.key for item in ats_options]
+            if search_all_official
+            else [item.key for item in ats_options[:8]]
+        ),
+        format_func=lambda key: source_map[key].label,
+        disabled=search_all_official,
+    )
+
+    st.subheader("Priority 2 — Official company careers")
+    selected_companies = st.multiselect(
+        "Company career sites",
+        options=[item.key for item in company_options],
+        default=(
+            [item.key for item in company_options]
+            if search_all_official
+            else [item.key for item in company_options[:8]]
+        ),
+        format_func=lambda key: source_map[key].label,
+        disabled=search_all_official,
+    )
+
+    if search_all_official:
+        selected_ats_sources = [item.key for item in ats_options]
+        selected_companies = [item.key for item in company_options]
+        st.caption(
+            f"{len(selected_ats_sources) + len(selected_companies)} "
+            "official sources enabled."
+        )
+
+    st.subheader("Priority 3 — General job boards")
     board_options = source_groups.get("job_board", [])
     selected_boards = st.multiselect(
         "LinkedIn and Indeed",
@@ -116,7 +149,7 @@ with st.sidebar:
         format_func=lambda key: source_map[key].label,
     )
 
-    st.subheader("Priority 3 — Manual India searches")
+    st.subheader("Priority 4 — Manual India searches")
     india_options = source_groups.get("india_board", [])
     selected_india_boards = st.multiselect(
         "Naukri, Foundit and Internshala",
@@ -124,8 +157,6 @@ with st.sidebar:
         default=[item.key for item in india_options[:2]],
         format_func=lambda key: source_map[key].label,
     )
-
-    selected_ats_sources = []
 
     posted_within = st.selectbox(
         "Posted within",

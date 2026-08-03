@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "strategy": "official_first",
   "connectors": [
     {
@@ -15,6 +15,90 @@
       "priority": 10
     },
     {
+      "key": "jfrog",
+      "label": "JFrog Careers",
+      "connector": "greenhouse",
+      "group": "ats_platform",
+      "enabled": true,
+      "official_source": true,
+      "company": "JFrog",
+      "token": "jfrog",
+      "board_url": "https://boards.greenhouse.io/jfrog",
+      "priority": 14
+    },
+    {
+      "key": "inovalon",
+      "label": "Inovalon Careers",
+      "connector": "greenhouse",
+      "group": "ats_platform",
+      "enabled": true,
+      "official_source": true,
+      "company": "Inovalon",
+      "token": "inovalon",
+      "board_url": "https://boards.greenhouse.io/inovalon",
+      "priority": 15
+    },
+    {
+      "key": "zuora",
+      "label": "Zuora Careers",
+      "connector": "greenhouse",
+      "group": "ats_platform",
+      "enabled": true,
+      "official_source": true,
+      "company": "Zuora",
+      "token": "zuora",
+      "board_url": "https://boards.greenhouse.io/zuora",
+      "priority": 16
+    },
+    {
+      "key": "kaseya",
+      "label": "Kaseya Careers",
+      "connector": "greenhouse",
+      "group": "ats_platform",
+      "enabled": true,
+      "official_source": true,
+      "company": "Kaseya",
+      "token": "kaseya",
+      "board_url": "https://boards.greenhouse.io/kaseya",
+      "priority": 17
+    },
+    {
+      "key": "taboola",
+      "label": "Taboola Careers",
+      "connector": "greenhouse",
+      "group": "ats_platform",
+      "enabled": true,
+      "official_source": true,
+      "company": "Taboola",
+      "token": "taboola",
+      "board_url": "https://boards.greenhouse.io/taboola",
+      "priority": 18
+    },
+    {
+      "key": "gruve",
+      "label": "Gruve Careers",
+      "connector": "greenhouse",
+      "group": "ats_platform",
+      "enabled": true,
+      "official_source": true,
+      "company": "Gruve",
+      "token": "gruve",
+      "board_url": "https://boards.greenhouse.io/gruve",
+      "priority": 19
+    },
+    {
+      "key": "certifyos",
+      "label": "CertifyOS Careers",
+      "connector": "ashby",
+      "group": "ats_platform",
+      "enabled": true,
+      "official_source": true,
+      "company": "CertifyOS",
+      "token": "certifyos",
+      "board_url": "https://jobs.ashbyhq.com/certifyos",
+      "priority": 20
+    },
+    {
       "key": "paytm",
       "label": "Paytm Careers",
       "connector": "lever",
@@ -25,6 +109,114 @@
       "token": "paytm",
       "board_url": "https://jobs.lever.co/paytm",
       "priority": 20
+    },
+    {
+      "key": "commure",
+      "label": "Commure Careers",
+      "connector": "ashby",
+      "group": "ats_platform",
+      "enabled": true,
+      "official_source": true,
+      "company": "Commure",
+      "token": "Commure",
+      "board_url": "https://jobs.ashbyhq.com/Commure",
+      "priority": 21
+    },
+    {
+      "key": "novo",
+      "label": "Novo Careers",
+      "connector": "ashby",
+      "group": "ats_platform",
+      "enabled": true,
+      "official_source": true,
+      "company": "Novo",
+      "token": "novo",
+      "board_url": "https://jobs.ashbyhq.com/novo",
+      "priority": 22
+    },
+    {
+      "key": "hinge_health",
+      "label": "Hinge Health Careers",
+      "connector": "ashby",
+      "group": "ats_platform",
+      "enabled": true,
+      "official_source": true,
+      "company": "Hinge Health",
+      "token": "hinge-health",
+      "board_url": "https://jobs.ashbyhq.com/hinge-health",
+      "priority": 23
+    },
+    {
+      "key": "riveron",
+      "label": "Riveron Careers",
+      "connector": "ashby",
+      "group": "ats_platform",
+      "enabled": true,
+      "official_source": true,
+      "company": "Riveron",
+      "token": "riveron",
+      "board_url": "https://jobs.ashbyhq.com/riveron",
+      "priority": 24
+    },
+    {
+      "key": "nielsen_company",
+      "label": "Nielsen Careers",
+      "connector": "smartrecruiters",
+      "group": "ats_platform",
+      "enabled": true,
+      "official_source": true,
+      "company": "Nielsen",
+      "token": "TheNielsenCompany",
+      "board_url": "https://careers.smartrecruiters.com/TheNielsenCompany",
+      "priority": 25
+    },
+    {
+      "key": "wns",
+      "label": "WNS Global Services Careers",
+      "connector": "smartrecruiters",
+      "group": "ats_platform",
+      "enabled": true,
+      "official_source": true,
+      "company": "WNS Global Services",
+      "token": "WNSGlobalServices144",
+      "board_url": "https://careers.smartrecruiters.com/WNSGlobalServices144/wns-india-career-page",
+      "priority": 26
+    },
+    {
+      "key": "sopra_steria",
+      "label": "Sopra Steria India Careers",
+      "connector": "smartrecruiters",
+      "group": "ats_platform",
+      "enabled": true,
+      "official_source": true,
+      "company": "Sopra Steria",
+      "token": "SopraSteria1",
+      "board_url": "https://careers.smartrecruiters.com/SopraSteria1/soprasteria-in",
+      "priority": 27
+    },
+    {
+      "key": "sandisk",
+      "label": "Sandisk Careers",
+      "connector": "smartrecruiters",
+      "group": "ats_platform",
+      "enabled": true,
+      "official_source": true,
+      "company": "Sandisk",
+      "token": "sandisk",
+      "board_url": "https://careers.smartrecruiters.com/sandisk",
+      "priority": 28
+    },
+    {
+      "key": "version1",
+      "label": "Version 1 Careers",
+      "connector": "smartrecruiters",
+      "group": "ats_platform",
+      "enabled": true,
+      "official_source": true,
+      "company": "Version 1",
+      "token": "version1",
+      "board_url": "https://careers.smartrecruiters.com/version1",
+      "priority": 29
     },
     {
       "key": "veeva",
@@ -144,7 +336,7 @@
       "label": "Lilly Careers",
       "connector": "workday",
       "group": "company_careers",
-      "enabled": true,
+      "enabled": false,
       "official_source": true,
       "company": "Lilly",
       "board_url": "https://lilly.wd5.myworkdayjobs.com/LLY",
@@ -153,7 +345,8 @@
         "tenant": "lilly",
         "site": "LLY",
         "host": "lilly.wd5.myworkdayjobs.com",
-        "locale": "en-US"
+        "locale": "en-US",
+        "disabled_reason": "Workday endpoint currently returns HTTP 422."
       }
     },
     {
@@ -171,6 +364,21 @@
         "site": "MiQ_Careers",
         "host": "miqdigital.wd3.myworkdayjobs.com",
         "locale": "en-US"
+      }
+    },
+    {
+      "key": "recruitee_feed_example",
+      "label": "Recruitee Public Feed (configure)",
+      "connector": "recruitee_xml",
+      "group": "ats_platform",
+      "enabled": false,
+      "official_source": true,
+      "company": "",
+      "board_url": "",
+      "priority": 150,
+      "options": {
+        "feed_url": "",
+        "note": "Enable only after adding an official company XML feed URL."
       }
     },
     {
